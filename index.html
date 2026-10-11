@@ -21,13 +21,13 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/
 .vwrap.paused{border-color:var(--accent)}
 video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .vpic{position:absolute;inset:0}
-/* камеры включены (вертикально): шоу сверху, под ним два окна камер в ряд */
+/* камеры включены (вертикально): шоу по центру свободного места, под ним два небольших окна камер в ряд */
 @media (orientation:portrait){
- .vwrap.camon{display:flex;flex-direction:column;gap:6px;background:transparent}
- .vwrap.camon .vpic{position:relative;inset:auto;flex:0 0 auto;aspect-ratio:16/9;border-radius:14px;overflow:hidden}
- .vwrap.camon .cams{position:relative;inset:auto;flex:1;min-height:0;display:flex;gap:6px;align-items:center;justify-content:center}
- .vwrap.camon .cams .tile,.vwrap.camon .cams .tile.me,.vwrap.camon.big .cams .tile{flex:0 0 calc(37.5% - 3px);width:auto;height:75%;aspect-ratio:auto;border-radius:14px}
- .vwrap.camon .cams button{top:6px;right:6px;bottom:auto;left:auto}}
+ .vwrap.camon{display:flex;flex-direction:column;gap:8px;background:transparent;padding-bottom:8px}
+ .vwrap.camon .vpic{position:relative;inset:auto;flex:1;min-height:0;border-radius:14px;overflow:hidden}
+ .vwrap.camon .cams{position:relative;inset:auto;flex:0 0 auto;display:flex;gap:8px;justify-content:center;align-items:flex-end}
+ .vwrap.camon .cams .tile,.vwrap.camon .cams .tile.me,.vwrap.camon.big .cams .tile{flex:0 0 28%;width:auto;height:auto;aspect-ratio:3/4;border-radius:14px}
+ .vwrap.camon .cams button{top:-6px;right:calc(22% - 18px);bottom:auto;left:auto}}
 .toast{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 120px/1 -apple-system,system-ui,sans-serif;color:#fff;text-shadow:0 0 30px var(--accent)}
@@ -35,7 +35,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .cams{position:absolute;right:8px;top:8px;display:flex;gap:4px;align-items:flex-end;z-index:3}.cams[hidden]{display:none}
 .cams .tile{position:relative;width:96px;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#111;border:1px solid rgba(255,255,255,.3)}
 .cams .tile.me{width:64px}.cams.big .tile{width:150px}.cams.big .tile.me{width:96px}.cams .tile[hidden]{display:none}
-.cams video{width:100%;height:100%;object-fit:cover}#lcam{transform:scaleX(-1)}
+.cams video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.cams .tile.me{transform:scaleX(-1)}
 .cams span{position:absolute;left:4px;bottom:3px;font-size:10px;color:#ddd;text-shadow:0 1px 2px #000}
 .cams button{position:absolute;bottom:-8px;left:-8px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.75);color:#fff;font-size:12px}
 .ctl{display:flex;align-items:center;gap:8px;padding:10px 12px 4px}
