@@ -17,30 +17,41 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/
 .pill{background:var(--glass);border:var(--edge);border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
 .pill.ok{background:linear-gradient(180deg,rgba(62,207,110,.6),rgba(62,207,110,.3))}
 .top .sp{flex:1}
-.vwrap{position:relative;margin:0 10px;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:16/9;flex-shrink:0;border:2px solid transparent;transition:border-color .2s}
+.vwrap{position:relative;margin:0 10px;border-radius:18px;overflow:hidden;background:#000;flex:1;min-height:200px;border:2px solid transparent;transition:border-color .2s}
 .vwrap.paused{border-color:var(--accent)}
 video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 120px/1 -apple-system,system-ui,sans-serif;color:#fff;text-shadow:0 0 30px var(--accent)}
 .cd[hidden]{display:none}
+.cams{position:absolute;right:8px;top:8px;display:flex;gap:4px;align-items:flex-end;z-index:3}.cams[hidden]{display:none}
+.cams .tile{position:relative;width:96px;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:#111;border:1px solid rgba(255,255,255,.3)}
+.cams .tile.me{width:64px}.cams.big .tile{width:150px}.cams.big .tile.me{width:96px}.cams .tile[hidden]{display:none}
+.cams video{width:100%;height:100%;object-fit:cover}#lcam{transform:scaleX(-1)}
+.cams span{position:absolute;left:4px;bottom:3px;font-size:10px;color:#ddd;text-shadow:0 1px 2px #000}
+.cams button{position:absolute;bottom:-8px;left:-8px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.75);color:#fff;font-size:12px}
 .ctl{display:flex;align-items:center;gap:8px;padding:10px 12px 4px}
 .ctl button{flex:0 0 auto;font:600 17px -apple-system,system-ui,sans-serif;color:#fff;background:var(--glass);border:var(--edge);border-radius:999px;padding:10px 14px}
 .ctl #pp{flex:1;font-size:20px;background:linear-gradient(180deg,rgba(255,61,127,.75),rgba(255,61,127,.45))}
 .seek{display:flex;align-items:center;gap:8px;padding:2px 14px 6px;font:13px ui-monospace,Menlo,monospace;color:var(--muted)}
 .seek input{flex:1;accent-color:var(--accent)}
-.chat{flex:1;min-height:0;margin:6px 10px 0;background:var(--glass);border:var(--edge);border-radius:20px;display:flex;flex-direction:column;overflow:hidden}
-.log{flex:1;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch}
-.log>div:first-child{margin-top:auto}.log div{margin:3px 0;max-width:85%;padding:7px 11px;border-radius:16px;font-size:16px;word-wrap:break-word}
-.log .me{align-self:flex-end;background:rgba(255,61,127,.35)}.log .them{align-self:flex-start;background:rgba(255,255,255,.12)}
-.log .big{font-size:34px;background:none;padding:0 4px}.log .sys{align-self:center;background:none;color:var(--muted);font-size:13px}
+.ovl{position:absolute;left:8px;bottom:8px;right:30%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;z-index:2}
+.ovl div{max-width:100%;padding:5px 10px;border-radius:14px;font-size:15px;line-height:1.3;word-wrap:break-word;color:#fff;
+ background:rgba(0,0,0,.42);text-shadow:0 1px 2px rgba(0,0,0,.8);transition:opacity 1s,transform .3s;animation:pop .25s ease-out;pointer-events:auto}
+.ovl div b{color:var(--accent);font-weight:700}.ovl .me b{color:#ffe14d}
+.ovl .big{font-size:30px;background:none;padding:0 2px}.ovl .sys{color:#cfcfd6;font-size:12px;background:rgba(0,0,0,.3)}
+.ovl .gone{opacity:0}@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .log .vm{text-decoration:underline dotted}
 .side{display:contents}
+.dock2{margin:8px 10px 6px}
+.extra{background:var(--glass);border:var(--edge);border-radius:20px;margin-bottom:8px;padding:4px 0;-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%)}.extra[hidden]{display:none}
 .emo{display:flex;gap:2px;overflow-x:auto;padding:4px 8px}.emo button{font-size:26px;background:none;border:0;padding:2px 4px}
 .quick{display:flex;gap:6px;overflow-x:auto;padding:2px 10px 6px}.quick button{flex:0 0 auto;font:600 14px -apple-system,system-ui,sans-serif;color:#fff;background:rgba(255,255,255,.1);border:var(--edge);border-radius:999px;padding:7px 12px}
-.inp{display:flex;gap:8px;padding:6px 10px 10px;align-items:center}
-.inp input{flex:1;font:16px -apple-system,system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.3);border:var(--edge);border-radius:999px;padding:11px 14px}
-.inp button{font-size:20px;color:#fff;background:var(--accent);border:0;border-radius:50%;width:44px;height:44px}
+.inp{display:flex;gap:6px;padding:6px;align-items:center;border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 45%,rgba(255,255,255,.10));-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 30px rgba(0,0,0,.45)}
+.inp input{flex:1;min-width:0;font:16px -apple-system,system-ui,sans-serif;color:#fff;background:transparent;border:0;outline:0;padding:10px 6px}
+.inp input::placeholder{color:rgba(255,255,255,.55)}
+.inp button{flex:0 0 auto;font-size:19px;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:50%;width:42px;height:42px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.inp #send{background:linear-gradient(180deg,rgba(255,61,127,.9),rgba(255,61,127,.6))}
 #ptt{background:rgba(255,255,255,.14);border:var(--edge);touch-action:none;-webkit-user-select:none;user-select:none}
 #ptt.rec{background:var(--accent);box-shadow:0 0 0 6px rgba(255,61,127,.35)}#ptt.hear{box-shadow:0 0 0 4px rgba(62,207,110,.7)}
 .sheet{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
@@ -52,21 +63,23 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .sbox input{width:100%;font:700 26px ui-monospace,Menlo,monospace;text-align:center;padding:12px;border-radius:14px;border:0;margin:6px 0}
 .code{font:800 48px ui-monospace,Menlo,monospace;letter-spacing:6px;color:var(--ok);text-align:center;margin:8px 0}
 .st{min-height:20px;font-size:15px;color:var(--warn)}
-@media (orientation:landscape){.app{flex-direction:row}.vwrap{flex:1;aspect-ratio:auto;height:calc(100% - 20px);margin:10px}
+@media (orientation:landscape){.app{flex-direction:row}.vwrap{flex:1;height:calc(100% - 20px);margin:10px}.side .sp{flex:1}
  .side{width:340px;display:flex;flex-direction:column;height:100%;padding:6px 0}}
 </style></head><body>
 <canvas id="amb" width="32" height="18"></canvas>
 <div class="app">
- <div class="vwrap paused" id="vw"><video id="v" playsinline webkit-playsinline preload="auto"></video><div class="toast" id="toast"></div><div class="cd" id="cd" hidden></div></div>
+ <div class="vwrap paused" id="vw"><video id="v" playsinline webkit-playsinline preload="auto"></video><div class="toast" id="toast"></div><div class="cd" id="cd" hidden></div>
+  <div class="ovl" id="log"></div>
+  <div class="cams" id="cams" hidden><div class="tile"><video id="rcam" autoplay playsinline muted></video><span id="camst">соединяю…</span></div><div class="tile me" id="ltile"><video id="lcam" autoplay playsinline muted></video></div><button id="camx">✕</button></div></div>
  <div class="side">
-  <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><span class="pill" id="markn" title="Метки">🏷 0</span><button class="pill" id="menu" style="color:#fff">⋯</button></div>
+  <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><span class="pill" id="markn" title="Метки">🏷 0</span><button class="pill" id="menu" style="color:#fff">⋯</button></div>
   <div class="ctl"><button id="back">↺ 10</button><button id="pp">▶ Пуск</button><button id="fwd">10 ↻</button><button id="mark">🔥</button></div>
   <div class="seek"><span id="cur">0:00</span><input type="range" id="sk" min="0" max="1000" value="0"><span id="dur">0:00</span></div>
-  <div class="chat"><div class="log" id="log"></div>
-   <div class="emo" id="emo"></div>
-   <div class="quick" id="quick"></div>
-   <div class="inp"><button id="ptt" title="Рация: держите и говорите">🎙</button><input id="txt" placeholder="Сообщение…" enterkeyhint="send"><button id="send">➤</button></div>
+  <div class="dock2">
+   <div class="extra" id="extra" hidden><div class="emo" id="emo"></div><div class="quick" id="quick"></div></div>
+   <div class="inp"><button id="ptt" title="Рация: держите и говорите">🎙</button><input id="txt" placeholder="Написать в чат…" enterkeyhint="send"><button id="emob">😊</button><button id="send">➤</button></div>
   </div>
+</div>
  </div>
 </div>
 <div class="sheet" id="setup"><div class="sbox">
@@ -94,7 +107,7 @@ function fmt(t){t=Math.max(0,Math.floor(t||0));return (t>=3600?Math.floor(t/3600
  x.fillStyle='#ffe14d';x.font='900 30px -apple-system';x.textAlign='center';x.fillText('ТА',90,168);$('appicon').href=c.toDataURL()}
 /* --- видео --- */
 let unlocked=false;
-function unlock(){if(unlocked||!v.src)return;unlocked=true;const p=v.play();if(p)p.then(()=>v.pause()).catch(()=>{unlocked=false})}
+function unlock(){lvUnlock();if(unlocked||!v.src)return;unlocked=true;const p=v.play();if(p)p.then(()=>v.pause()).catch(()=>{unlocked=false})}
 $('pick').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;v.src=URL.createObjectURL(f);v.load();$('fname').textContent='✓ '+f.name;try{localStorage.setItem('tox_fname',f.name)}catch(_){}unlock()});
 v.addEventListener('loadedmetadata',()=>{$('dur').textContent=fmt(v.duration);try{const p=JSON.parse(localStorage.getItem('tox_pos')||'null');if(p&&p.t>30){v.currentTime=p.t;toast('↪ с '+fmt(p.t))}}catch(_){}});
 v.addEventListener('pause',()=>{$('vw').classList.add('paused');$('pp').textContent='▶ Пуск'});
@@ -137,41 +150,107 @@ function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.ad
   else if(m.k==='cd')countdown(m.t);
   else if(m.k==='chat'){add(m.txt,false);toast('💬 '+m.txt)}
   else if(m.k==='mark'){marks++;$('markn').textContent='🏷 '+marks;toast('🔥 напарник отметил')}
-  else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m)}
+  else if(m.k==='pcm')pcmRecv(m);else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m);
+  else if(m.k==='sig')sigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
 $('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true)};
 $('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false)};
 $('close').onclick=()=>{$('setup').hidden=true;unlock()};$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
 /* --- чат --- */
 const EMO=/^(\p{Extended_Pictographic}|️|‍|\s)+$/u;
-function add(t,mine){const d=document.createElement('div');d.className=(mine?'me':'them')+(EMO.test(t)?' big':'');d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9}
-function sys(t){const d=document.createElement('div');d.className='sys';d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9}
+function feed(d,life){const L=$('log');L.appendChild(d);while(L.children.length>8)L.firstChild.remove();
+  setTimeout(()=>d.classList.add('gone'),life*1000);setTimeout(()=>d.remove(),life*1000+1100)}
+function add(t,mine){const d=document.createElement('div');const big=EMO.test(t);d.className=(mine?'me':'them')+(big?' big':'');
+  if(big)d.textContent=t;else{const b=document.createElement('b');b.textContent=(mine?'Я':'Напарник')+': ';d.appendChild(b);d.appendChild(document.createTextNode(t))}feed(d,12)}
+function sys(t){const d=document.createElement('div');d.className='sys';d.textContent=t;feed(d,6)}
 function say(t){t=t.trim();if(!t)return;if(!room){$('setup').hidden=false;return}send({k:'chat',txt:t.slice(0,300)});add(t,true)}
-$('send').onclick=()=>{say($('txt').value);$('txt').value=''};$('txt').addEventListener('keydown',e=>{if(e.key==='Enter'){say($('txt').value);$('txt').value='';$('txt').blur()}});
-'😂 🤣 😱 🤦 🙄 😡 🔥 👍 👎 ❤️ 🤡 💀'.split(' ').forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>say(e);$('emo').appendChild(b)});
+$('send').onclick=()=>{say($('txt').value);$('txt').value=''};$('emob').onclick=()=>{$('extra').hidden=!$('extra').hidden};$('txt').addEventListener('keydown',e=>{if(e.key==='Enter'){say($('txt').value);$('txt').value='';$('txt').blur()}});
+'😂 🤣 😱 🤦 🙄 😡 🔥 👍 👎 ❤️ 🤡 💀'.split(' ').forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>{const i=$('txt');if(i.value.trim())i.value+=e;else say(e)};$('emo').appendChild(b)});
 ['Пауза!','Погнали','Назад','Смотри!','Ахаха','Ок'].forEach(q=>{const b=document.createElement('button');b.textContent=q;b.onclick=()=>say(q);$('quick').appendChild(b)});
 /* --- метки --- */
 let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;send({k:'mark',kind:'fire',t:+v.currentTime.toFixed(2)});toast('🔥 метка')};
-/* --- рация: держите 🎙. iPhone пишет mp4 — фраза уходит целиком после отпускания; живой поток (webm) принимается, если отправил Chrome --- */
-let rec=null,recT0=0,stream=null;
-function b64(u){let b='';for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(b)}
-function unb64(d){const s=atob(d),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
-async function pttDown(e){e&&e.preventDefault();if(rec)return;if(!room){$('setup').hidden=false;return}
-  try{if(!stream||!stream.getAudioTracks().some(t=>t.readyState==='live'))stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})}catch(_){toast('🎙 нет доступа к микрофону');return}
-  const mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||'';
-  rec=new MediaRecorder(stream,mime?{mimeType:mime}:{});const parts=[];recT0=performance.now();rec.ondataavailable=ev=>{if(ev.data.size)parts.push(ev.data)};
-  rec.onstop=async()=>{const dur=(performance.now()-recT0)/1000,r=rec;rec=null;$('ptt').classList.remove('rec');if(dur<0.4)return;
-    const blob=new Blob(parts,{type:r.mimeType}),d=b64(new Uint8Array(await blob.arrayBuffer())),id=Math.random().toString(36).slice(2,8),k=Math.ceil(d.length/60000);
-    for(let i=0;i<k;i++)send({k:'vm',id,i,n:k,mime:r.mimeType,dur:Math.round(dur),d:d.slice(i*60000,(i+1)*60000)});vmLog(blob,dur,true)};
-  rec.start();$('ptt').classList.add('rec');if(navigator.vibrate)navigator.vibrate(20)}
-function pttUp(e){e&&e.preventDefault();if(rec&&rec.state==='recording')rec.stop()}
+/* ===== живая рация: звук 16 кГц, μ-law, порции по 0,2 с через комнату; у собеседника играет сразу (Web Audio) =====
+   Работает одинаково в Chrome, Safari и на iPhone. Хуки задаёт приложение: LIVE.send(msg), LIVE.toast(text),
+   LIVE.log(blob,dur,mine), LIVE.out() — id устройства вывода (наушники) или '', LIVE.hear(on). */
+const LIVE={send:()=>{},toast:()=>{},log:()=>{},out:()=>'',hear:()=>{}};
+const LVA={cap:null,play:null,src:null,proc:null,on:false,sid:'',seq:0,acc:[],all:[],frac:0,t0:0};
+function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)()}
+  if(LVA.play.state!=='running')LVA.play.resume().catch(()=>{});
+  const o=LIVE.out();if(LVA.play.setSinkId&&o!==LVA.sink){LVA.sink=o;LVA.play.setSinkId(o||'').catch(()=>{})}return LVA.play}
+function lvUnlock(){try{lvPlayCtx()}catch(_){}}   /* вызывать из нажатия пользователя (iPhone без этого молчит) */
+function muEnc(x){x=Math.max(-1,Math.min(1,x));const s=x<0?0x80:0;let m=Math.log(1+255*Math.abs(x))/Math.log(256);return (~(s|Math.round(m*127)))&0xFF}
+function muDec(u){u=~u&0xFF;const s=u&0x80,m=(u&0x7F)/127,x=(Math.pow(256,m)-1)/255;return s?-x:x}
+function lvB64(u){let b='';for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(b)}
+function lvUnB64(d){const s=atob(d),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+function lvWav(parts){let n=0;parts.forEach(p=>{if(p)n+=p.length});const b=new ArrayBuffer(44+n*2),v=new DataView(b);
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  w(36,'data');v.setUint32(40,n*2,true);let o=44;parts.forEach(p=>{if(p)for(let i=0;i<p.length;i++){v.setInt16(o,Math.round(muDec(p[i])*32767),true);o+=2}});
+  return new Blob([b],{type:'audio/wav'})}
+/* --- отправка --- */
+function lvFlush(end){const a=LVA.acc;LVA.acc=[];if(a.length){const u=new Uint8Array(a.length);for(let i=0;i<a.length;i++)u[i]=muEnc(a[i]);
+    LVA.all.push(u);LIVE.send({k:'pcm',sid:LVA.sid,seq:LVA.seq++,d:lvB64(u)})}
+  if(end)LIVE.send({k:'pcm',sid:LVA.sid,end:1,seq:LVA.seq,dur:Math.round((performance.now()-LVA.t0)/1000)})}
+function liveStart(stream){if(LVA.on)return;
+  if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{});
+  const ctx=LVA.cap,ratio=ctx.sampleRate/16000;LVA.sid=Math.random().toString(36).slice(2,8);LVA.seq=0;LVA.acc=[];LVA.all=[];LVA.frac=0;LVA.t0=performance.now();
+  LVA.src=ctx.createMediaStreamSource(stream);LVA.proc=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,2048,1,1);
+  LVA.proc.onaudioprocess=e=>{if(!LVA.on)return;const x=e.inputBuffer.getChannelData(0);let i=LVA.frac;
+    for(;i+ratio<=x.length;i+=ratio){let s=0,k=0;for(let j=Math.floor(i);j<Math.floor(i+ratio);j++){s+=x[j];k++}LVA.acc.push(k?s/k:0)}
+    LVA.frac=i-x.length;if(LVA.acc.length>=3200)lvFlush(false)};
+  LVA.src.connect(LVA.proc);LVA.proc.connect(ctx.destination);LVA.on=true}
+function liveStop(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect()}catch(_){}
+  const dur=(performance.now()-LVA.t0)/1000;if(dur>=0.4)LIVE.log(lvWav(LVA.all),dur,true)}
+/* --- приём: играем по порядку, с запасом 0,25 с --- */
+const LVP={};
+function pcmRecv(m){const ctx=lvPlayCtx();let P=LVP[m.sid];
+  if(!P){if(m.end&&m.seq===0)return;P=LVP[m.sid]={q:{},want:0,next:0,all:[],timer:null};LIVE.hear(true)}
+  if(m.end){P.end=m.seq;P.dur=m.dur}else{const u=lvUnB64(m.d);P.q[m.seq]=u;P.all[m.seq]=u}
+  const pump=()=>{while(P.q[P.want]){const u=P.q[P.want];delete P.q[P.want];P.want++;const f=new Float32Array(u.length);for(let i=0;i<u.length;i++)f[i]=muDec(u[i]);
+      const b=ctx.createBuffer(1,f.length,16000);b.getChannelData(0).set(f);const s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);
+      const t=Math.max(ctx.currentTime+0.25,P.next);s.start(t);P.next=t+b.duration}
+    if(P.end!=null&&P.want>=P.end&&!P.done){P.done=true;LIVE.hear(false);LIVE.log(lvWav(P.all),P.dur||1,false);delete LVP[m.sid]}};
+  pump();clearTimeout(P.timer);   /* потерялась порция — через 0,5 с пропускаем её */
+  P.timer=setTimeout(()=>{if(P.done)return;const keys=Object.keys(P.q).map(Number);if(keys.length){P.want=Math.min(...keys);pump()}
+    else if(P.end!=null&&!P.done){P.want=P.end;pump()}},500)}
+
+/* --- рация: держите 🎙 — собеседник слышит сразу (живой звук), фраза потом остаётся в чате --- */
+const b64=lvB64,unb64=lvUnB64;
+let stream=null;
+LIVE.send=send;LIVE.toast=toast;LIVE.log=(b,d,mine)=>vmLog(b,d,mine);LIVE.hear=on=>$('ptt').classList.toggle('hear',on);
+async function pttDown(e){e&&e.preventDefault();if(LVA.on)return;if(!room){$('setup').hidden=false;return}lvUnlock();
+  try{if(!stream||!stream.getAudioTracks().some(t=>t.readyState==='live'))stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(_){toast('🎙 нет доступа к микрофону');return}
+  liveStart(stream);$('ptt').classList.add('rec');if(navigator.vibrate)navigator.vibrate(20)}
+function pttUp(e){e&&e.preventDefault();if(!LVA.on)return;liveStop();$('ptt').classList.remove('rec')}
 ['touchstart','mousedown'].forEach(t=>$('ptt').addEventListener(t,pttDown));['touchend','touchcancel','mouseup','mouseleave'].forEach(t=>$('ptt').addEventListener(t,pttUp));
 function vmPlay(b){new Audio(URL.createObjectURL(b)).play().catch(()=>toast('Нажмите на голосовое в чате'))}
-function vmLog(b,dur,mine){const d=document.createElement('div');d.className=mine?'me':'them';d.innerHTML='<span class="vm">🎙 голосовое, '+Math.max(1,Math.round(dur))+' с ▶</span>';d.onclick=()=>vmPlay(b);$('log').appendChild(d);$('log').scrollTop=1e9}
+function vmLog(b,dur,mine){const d=document.createElement('div');d.className=mine?'me':'them';d.innerHTML='<b>'+(mine?'Я':'Напарник')+':</b> <span class="vm">🎙 '+Math.max(1,Math.round(dur))+' с ▶</span>';d.onclick=e=>{e.stopPropagation();vmPlay(b)};feed(d,40)}
 const vmBuf={};function vmRecv(m){const b=vmBuf[m.id]=vmBuf[m.id]||[];b[m.i]=m.d;if(b.filter(x=>x).length<m.n)return;delete vmBuf[m.id];
   const blob=new Blob([unb64(b.join(''))],{type:m.mime||'audio/mp4'});vmLog(blob,m.dur,false);toast('🎙 напарник');vmPlay(blob)}
 const lives={};function lvRecv(m){let L=lives[m.sid]||(lives[m.sid]={q:{},mime:m.mime});$('ptt').classList.add('hear');
   if(m.end){L.total=m.seq;L.dur=m.dur}else L.q[m.seq]=unb64(m.d);
   if(L.total!=null&&Object.keys(L.q).length>=L.total&&!L.done){L.done=true;$('ptt').classList.remove('hear');const blob=new Blob([...Array(L.total).keys()].map(i=>L.q[i]).filter(Boolean),{type:L.mime});vmLog(blob,L.dur||1,false);vmPlay(blob)}}
+
+/* --- камеры: WebRTC напрямую между устройствами, описание соединения — через ту же комнату (совместимо с плеером на Mac) --- */
+let pc=null,camLocal=null;const ICE=[{urls:['stun:stun.l.google.com:19302','stun:stun.cloudflare.com:3478']}];
+async function zip(str){const cs=new Blob([str]).stream().pipeThrough(new CompressionStream('deflate-raw'));return b64(new Uint8Array(await new Response(cs).arrayBuffer()))}
+async function unzip(d){return await new Response(new Blob([unb64(d)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()}
+async function sigSend(type,desc){const d=await zip(JSON.stringify(desc)),id=Math.random().toString(36).slice(2,7),k=Math.ceil(d.length/3000);
+  for(let i=0;i<k;i++)send({k:'sig',type,id,i,n:k,d:d.slice(i*3000,(i+1)*3000)})}
+const sigBuf={};async function sigRecv(m){const b=sigBuf[m.id]=sigBuf[m.id]||[];b[m.i]=m.d;if(b.filter(x=>x).length<m.n)return;delete sigBuf[m.id];
+  const desc=JSON.parse(await unzip(b.join('')));if(m.type==='offer')await camStart(false,desc);else if(m.type==='answer'&&pc&&pc.signalingState==='have-local-offer')await pc.setRemoteDescription(desc)}
+function waitIce(){return new Promise(r=>{if(pc.iceGatheringState==='complete')return r();const t=setTimeout(r,3000);pc.addEventListener('icegatheringstatechange',()=>{if(pc&&pc.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
+async function camStart(initiator,offer){if(!room){$('setup').hidden=false;return}camStop(false);pc=new RTCPeerConnection({iceServers:ICE});
+  try{camLocal=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240},frameRate:{ideal:15}},audio:false})}catch(_){camLocal=null;toast('📹 нет доступа к камере')}
+  if(camLocal)camLocal.getTracks().forEach(t=>pc.addTrack(t,camLocal));else pc.addTransceiver('video',{direction:'recvonly'});
+  $('lcam').srcObject=camLocal;$('ltile').hidden=!camLocal;pc.ontrack=e=>{$('rcam').srcObject=e.streams[0]||new MediaStream([e.track])};
+  pc.onconnectionstatechange=()=>{if(!pc)return;const s=pc.connectionState;$('camst').textContent=s==='connected'?'':s==='failed'?'не удалось соединиться':s==='disconnected'?'связь прервалась…':'соединяю…'};
+  $('cams').hidden=false;$('camb').classList.add('ok');$('camst').textContent='соединяю…';
+  if(initiator){await pc.setLocalDescription(await pc.createOffer({offerToReceiveVideo:true}));await waitIce();sigSend('offer',pc.localDescription)}
+  else{await pc.setRemoteDescription(offer);await pc.setLocalDescription(await pc.createAnswer());await waitIce();sigSend('answer',pc.localDescription)}}
+function camStop(tell){if(pc){pc.close();pc=null}if(camLocal){camLocal.getTracks().forEach(t=>t.stop());camLocal=null}
+  $('rcam').srcObject=null;$('lcam').srcObject=null;$('cams').hidden=true;$('camb').classList.remove('ok');if(tell)send({k:'camoff'})}
+$('camb').onclick=()=>{pc?camStop(true):camStart(true)};
+$('camx').onclick=e=>{e.stopPropagation();camStop(true)};$('cams').onclick=e=>{e.stopPropagation();$('cams').classList.toggle('big')};
 /* старт: сразу показать настройку; вспомнить последнюю комнату */
 try{const r=JSON.parse(localStorage.getItem('tox_room')||'null');if(r){$('cin').value=r.code}}catch(_){}
 </script></body></html>
