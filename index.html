@@ -20,7 +20,15 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/
 .vwrap{position:relative;margin:0 10px;border-radius:18px;overflow:hidden;background:#000;flex:1;min-height:200px;border:2px solid transparent;transition:border-color .2s}
 .vwrap.paused{border-color:var(--accent)}
 video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
-.toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.vpic{position:absolute;inset:0}
+/* камеры включены (вертикально): шоу сверху, под ним два окна камер в ряд */
+@media (orientation:portrait){
+ .vwrap.camon{display:flex;flex-direction:column;gap:6px;background:transparent}
+ .vwrap.camon .vpic{position:relative;inset:auto;flex:0 0 auto;aspect-ratio:16/9;border-radius:14px;overflow:hidden}
+ .vwrap.camon .cams{position:relative;inset:auto;flex:1;min-height:0;display:flex;gap:6px;align-items:stretch}
+ .vwrap.camon .cams .tile,.vwrap.camon .cams .tile.me,.vwrap.camon.big .cams .tile{flex:1;width:auto;height:auto;aspect-ratio:auto;border-radius:14px}
+ .vwrap.camon .cams button{top:6px;right:6px;bottom:auto;left:auto}}
+.toast{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
 .cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 120px/1 -apple-system,system-ui,sans-serif;color:#fff;text-shadow:0 0 30px var(--accent)}
 .cd[hidden]{display:none}
@@ -35,12 +43,12 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .ctl #pp{flex:1;font-size:20px;background:linear-gradient(180deg,rgba(255,61,127,.75),rgba(255,61,127,.45))}
 .seek{display:flex;align-items:center;gap:8px;padding:2px 14px 6px;font:13px ui-monospace,Menlo,monospace;color:var(--muted)}
 .seek input{flex:1;accent-color:var(--accent)}
-.ovl{position:absolute;left:8px;bottom:8px;right:30%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;z-index:2}
+.ovl{position:absolute;left:8px;top:8px;right:30%;max-height:calc(100% - 16px);overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:4px;pointer-events:none;z-index:2}
 .ovl div{max-width:100%;padding:5px 10px;border-radius:14px;font-size:15px;line-height:1.3;word-wrap:break-word;color:#fff;
  background:rgba(0,0,0,.42);text-shadow:0 1px 2px rgba(0,0,0,.8);transition:opacity 1s,transform .3s;animation:pop .25s ease-out;pointer-events:auto}
 .ovl div b{color:var(--accent);font-weight:700}.ovl .me b{color:#ffe14d}
 .ovl .big{font-size:30px;background:none;padding:0 2px}.ovl .sys{color:#cfcfd6;font-size:12px;background:rgba(0,0,0,.3)}
-.ovl .gone{opacity:0}@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ovl .gone{opacity:0}@keyframes pop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 .log .vm{text-decoration:underline dotted}
 .side{display:contents}
 .dock2{margin:8px 10px 6px}
@@ -68,8 +76,8 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 </style></head><body>
 <canvas id="amb" width="32" height="18"></canvas>
 <div class="app">
- <div class="vwrap paused" id="vw"><video id="v" playsinline webkit-playsinline preload="auto"></video><div class="toast" id="toast"></div><div class="cd" id="cd" hidden></div>
-  <div class="ovl" id="log"></div>
+ <div class="vwrap paused" id="vw"><div class="vpic"><video id="v" playsinline webkit-playsinline preload="auto"></video><div class="toast" id="toast"></div><div class="cd" id="cd" hidden></div>
+  <div class="ovl" id="log"></div></div>
   <div class="cams" id="cams" hidden><div class="tile"><video id="rcam" autoplay playsinline muted></video><span id="camst">соединяю…</span></div><div class="tile me" id="ltile"><video id="lcam" autoplay playsinline muted></video></div><button id="camx">✕</button></div></div>
  <div class="side">
   <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><span class="pill" id="markn" title="Метки">🏷 0</span><button class="pill" id="menu" style="color:#fff">⋯</button></div>
@@ -121,7 +129,7 @@ function playPause(){if(!v.src){$('setup').hidden=false;return}unlock();
 let started=false,cdOn=false;
 function countdown(t){if(cdOn)return;cdOn=true;started=true;if(t!=null&&Math.abs(v.currentTime-t)>0.3)v.currentTime=t;const e=$('cd');e.hidden=false;let n=3;e.textContent=n;
   const iv=setInterval(()=>{n--;if(n>0)e.textContent=n;else{clearInterval(iv);e.hidden=true;cdOn=false;v.play()}},1000)}
-$('pp').onclick=playPause;$('vw').onclick=playPause;
+$('pp').onclick=playPause;document.querySelector('.vpic').onclick=playPause;
 $('back').onclick=()=>{v.currentTime=Math.max(0,v.currentTime-10);send({k:'seek',t:v.currentTime})};
 $('fwd').onclick=()=>{v.currentTime=Math.min(v.duration||0,v.currentTime+10);send({k:'seek',t:v.currentTime})};
 /* фон — размытый кадр */
@@ -157,7 +165,7 @@ $('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9
 $('close').onclick=()=>{$('setup').hidden=true;unlock()};$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
 /* --- чат --- */
 const EMO=/^(\p{Extended_Pictographic}|️|‍|\s)+$/u;
-function feed(d,life){const L=$('log');L.appendChild(d);while(L.children.length>8)L.firstChild.remove();
+function feed(d,life){const L=$('log');L.appendChild(d);while(L.children.length>8||(L.children.length>1&&L.scrollHeight>L.clientHeight+2))L.firstChild.remove();
   setTimeout(()=>d.classList.add('gone'),life*1000);setTimeout(()=>d.remove(),life*1000+1100)}
 function add(t,mine){const d=document.createElement('div');const big=EMO.test(t);d.className=(mine?'me':'them')+(big?' big':'');
   if(big)d.textContent=t;else{const b=document.createElement('b');b.textContent=(mine?'Я':'Напарник')+': ';d.appendChild(b);d.appendChild(document.createTextNode(t))}feed(d,12)}
@@ -244,11 +252,11 @@ async function camStart(initiator,offer){if(!room){$('setup').hidden=false;retur
   if(camLocal)camLocal.getTracks().forEach(t=>pc.addTrack(t,camLocal));else pc.addTransceiver('video',{direction:'recvonly'});
   $('lcam').srcObject=camLocal;$('ltile').hidden=!camLocal;pc.ontrack=e=>{$('rcam').srcObject=e.streams[0]||new MediaStream([e.track])};
   pc.onconnectionstatechange=()=>{if(!pc)return;const s=pc.connectionState;$('camst').textContent=s==='connected'?'':s==='failed'?'не удалось соединиться':s==='disconnected'?'связь прервалась…':'соединяю…'};
-  $('cams').hidden=false;$('camb').classList.add('ok');$('camst').textContent='соединяю…';
+  $('cams').hidden=false;$('vw').classList.add('camon');$('camb').classList.add('ok');$('camst').textContent='соединяю…';
   if(initiator){await pc.setLocalDescription(await pc.createOffer({offerToReceiveVideo:true}));await waitIce();sigSend('offer',pc.localDescription)}
   else{await pc.setRemoteDescription(offer);await pc.setLocalDescription(await pc.createAnswer());await waitIce();sigSend('answer',pc.localDescription)}}
 function camStop(tell){if(pc){pc.close();pc=null}if(camLocal){camLocal.getTracks().forEach(t=>t.stop());camLocal=null}
-  $('rcam').srcObject=null;$('lcam').srcObject=null;$('cams').hidden=true;$('camb').classList.remove('ok');if(tell)send({k:'camoff'})}
+  $('rcam').srcObject=null;$('lcam').srcObject=null;$('cams').hidden=true;$('vw').classList.remove('camon');$('camb').classList.remove('ok');if(tell)send({k:'camoff'})}
 $('camb').onclick=()=>{pc?camStop(true):camStart(true)};
 $('camx').onclick=e=>{e.stopPropagation();camStop(true)};$('cams').onclick=e=>{e.stopPropagation();$('cams').classList.toggle('big')};
 /* старт: сразу показать настройку; вспомнить последнюю комнату */
