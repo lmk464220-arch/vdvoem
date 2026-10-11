@@ -78,8 +78,20 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
  .cams{left:8px;right:8px;top:auto;bottom:8px;justify-content:space-between;pointer-events:none}
  .cams .tile,.cams .tile.me{width:72px;pointer-events:auto}.cams.big .tile,.cams.big .tile.me{width:110px}
  .cams button{top:-10px;right:-6px;bottom:auto;left:auto;pointer-events:auto}}
-@media (orientation:landscape){.app{flex-direction:row}.vwrap{flex:1;height:calc(100% - 20px);margin:10px}.side .sp{flex:1}
- .side{width:340px;display:flex;flex-direction:column;height:100%;padding:6px 0}}
+@media (orientation:landscape){
+ .app{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) auto;grid-template-rows:1fr auto 1fr auto;
+  grid-template-areas:"ctl vid vid room" "ctl vid vid camb" "ctl vid vid menu" "seek seek dock dock";column-gap:6px}
+ .side,.top{display:contents}.top .sp{display:none}
+ .vwrap{grid-area:vid;margin:6px 0 0;min-height:0;height:calc(100% - 6px);width:auto;max-width:100%;aspect-ratio:var(--ar,16/9);justify-self:center}
+ .ctl{grid-area:ctl;flex-direction:column;justify-content:center;padding:6px 0 6px 6px;gap:10px}
+ .ctl button{width:64px;padding:10px 0;font-size:15px}.ctl #pp{flex:0 0 auto;height:72px;font-size:16px;line-height:1.15}
+ #room{grid-area:room;align-self:end;justify-self:center;max-width:76px;white-space:normal;text-align:center;font-size:12px;padding:6px 8px;margin:0 6px 0 0}
+ #camb{grid-area:camb;align-self:center;justify-self:center;margin:10px 6px 10px 0}
+ #menu{grid-area:menu;align-self:start;justify-self:center;margin:0 6px 0 0}
+ .seek{grid-area:seek;padding:4px 6px 6px 12px;align-self:center}
+ .dock2{grid-area:dock;margin:4px 8px 6px 0;position:relative}
+ .dock2 .extra{position:absolute;left:0;right:0;bottom:100%;margin-bottom:6px;z-index:5}
+ .inp{padding:4px}.inp button{width:36px;height:36px;font-size:16px}.inp input{padding:6px 4px;font-size:15px}}
 </style></head><body>
 <canvas id="amb" width="32" height="18"></canvas>
 <div class="app">
@@ -87,12 +99,11 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
   <div class="ovl" id="log"></div></div>
   <div class="cams" id="cams" hidden><div class="tile"><video id="rcam" autoplay playsinline muted></video><span id="camst">соединяю…</span></div><div class="tile me" id="ltile"><video id="lcam" autoplay playsinline muted></video></div><button id="camx">✕</button></div></div>
  <div class="side">
-  <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><span class="pill" id="markn" title="Метки">🏷 0</span><button class="pill" id="menu" style="color:#fff">⋯</button></div>
-  <div class="ctl"><button id="back">↺ 10</button><button id="pp">▶ Пуск</button><button id="fwd">10 ↻</button><button id="mark">🔥</button></div>
+  <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><button class="pill" id="menu" style="color:#fff">⋯</button></div>
+  <div class="ctl"><button id="back">↺ 10</button><button id="pp">▶ Пуск</button><button id="fwd">10 ↻</button></div>
   <div class="seek"><span id="cur">0:00</span><input type="range" id="sk" min="0" max="1000" value="0"><span id="dur">0:00</span></div>
   <div class="dock2">
-   <div class="extra" id="extra" hidden><div class="emo" id="emo"></div><div class="quick" id="quick"></div></div>
-   <div class="inp"><button id="ptt" title="Рация: держите и говорите">🎙</button><input id="txt" placeholder="Написать в чат…" enterkeyhint="send"><button id="emob">😊</button><button id="send">➤</button></div>
+   <div class="inp"><button id="ptt" title="Рация: держите и говорите">🎙</button><input id="txt" placeholder="Написать в чат…" enterkeyhint="send"><button id="send">➤</button></div>
   </div>
 </div>
  </div>
@@ -135,6 +146,7 @@ function unlock(){lvUnlock();if(unlocked||!v.src)return;unlocked=true;const p=v.
 $('pick').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;v.src=URL.createObjectURL(f);v.load();$('fname').textContent='✓ '+f.name;try{localStorage.setItem('tox_fname',f.name)}catch(_){}unlock()});
 v.addEventListener('loadedmetadata',()=>{$('dur').textContent=fmt(v.duration);try{const p=JSON.parse(localStorage.getItem('tox_pos')||'null');if(p&&p.t>30){v.currentTime=p.t;toast('↪ с '+fmt(p.t))}}catch(_){}});
 v.addEventListener('pause',()=>{$('vw').classList.add('paused');$('pp').textContent='▶ Пуск'});
+v.addEventListener('loadedmetadata',()=>{if(v.videoWidth)document.documentElement.style.setProperty('--ar',v.videoWidth+'/'+v.videoHeight)});
 v.addEventListener('play',()=>{$('vw').classList.remove('paused');$('pp').textContent='⏸ Пауза'});
 setInterval(()=>{if(v.duration){$('cur').textContent=fmt(v.currentTime);if(!sk.drag)$('sk').value=Math.round(1000*v.currentTime/v.duration);try{localStorage.setItem('tox_pos',JSON.stringify({t:v.currentTime}))}catch(_){}}},500);
 const sk=$('sk');sk.addEventListener('input',()=>{sk.drag=true;if(v.duration)$('cur').textContent=fmt(sk.value/1000*v.duration)});
@@ -173,7 +185,7 @@ function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.ad
   else if(m.k==='tick'){if(!v.paused&&Math.abs(v.currentTime-m.t)>0.5)v.currentTime=m.t}
   else if(m.k==='cd')countdown(m.t);
   else if(m.k==='chat'){add(m.txt,false);toast('💬 '+m.txt)}
-  else if(m.k==='mark'){marks++;$('markn').textContent='🏷 '+marks;toast('🔥 напарник отметил')}
+  else if(m.k==='mark'){}
   else if(m.k==='pcm')pcmRecv(m);else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m);
   else if(m.k==='sig')sigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
 $('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true)};
@@ -187,11 +199,9 @@ function add(t,mine){const d=document.createElement('div');const big=EMO.test(t)
   if(big)d.textContent=t;else{const b=document.createElement('b');b.textContent=(mine?'Я':'Напарник')+': ';d.appendChild(b);d.appendChild(document.createTextNode(t))}feed(d,12)}
 function sys(t){const d=document.createElement('div');d.className='sys';d.textContent=t;feed(d,6)}
 function say(t){t=t.trim();if(!t)return;if(!room){$('setup').hidden=false;return}send({k:'chat',txt:t.slice(0,300)});add(t,true)}
-$('send').onclick=()=>{say($('txt').value);$('txt').value=''};$('emob').onclick=()=>{$('extra').hidden=!$('extra').hidden};$('txt').addEventListener('keydown',e=>{if(e.key==='Enter'){say($('txt').value);$('txt').value='';$('txt').blur()}});
-'😂 🤣 😱 🤦 🙄 😡 🔥 👍 👎 ❤️ 🤡 💀'.split(' ').forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>{const i=$('txt');if(i.value.trim())i.value+=e;else say(e)};$('emo').appendChild(b)});
-['Пауза!','Погнали','Назад','Смотри!','Ахаха','Ок'].forEach(q=>{const b=document.createElement('button');b.textContent=q;b.onclick=()=>say(q);$('quick').appendChild(b)});
+$('send').onclick=()=>{say($('txt').value);$('txt').value=''};$('txt').addEventListener('keydown',e=>{if(e.key==='Enter'){say($('txt').value);$('txt').value='';$('txt').blur()}});
 /* --- метки --- */
-let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;send({k:'mark',kind:'fire',t:+v.currentTime.toFixed(2)});toast('🔥 метка')};
+
 /* ===== живая рация: звук 16 кГц, μ-law, порции по 0,2 с через комнату; у собеседника играет сразу (Web Audio) =====
    Работает одинаково в Chrome, Safari и на iPhone. Хуки задаёт приложение: LIVE.send(msg), LIVE.toast(text),
    LIVE.log(blob,dur,mine) или null (не сохранять фразы в чат), LIVE.out() — id устройства вывода (наушники) или '',
