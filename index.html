@@ -64,6 +64,9 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 #ptt.rec{background:rgba(255,255,255,.85);box-shadow:0 0 0 6px rgba(255,255,255,.25)}#ptt.hear{box-shadow:0 0 0 4px rgba(62,207,110,.7)}
 .sheet{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
 .sheet[hidden]{display:none}
+.inst{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.45}
+.inst[hidden]{display:none}.inst b{color:#fff}.inst .x{float:right;opacity:.6;padding:0 4px}
+.inst ol{margin:6px 0 0;padding-left:20px}.inst li{margin:3px 0}
 .sbox{width:100%;background:#17171a;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));border-top:var(--edge)}
 .sbox h2{margin:0 0 8px;font-size:22px}.sbox p{color:var(--muted);margin:6px 0 12px;font-size:15px}
 .sbox button,.sbox label.btn{display:block;width:100%;text-align:center;font:600 18px -apple-system,system-ui,sans-serif;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.1));color:#fff;margin:8px 0}
@@ -96,6 +99,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 </div>
 <div class="sheet" id="setup"><div class="sbox">
  <h2>👥 Смотрим вдвоём</h2>
+ <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
  <p id="fname" style="color:var(--ok)"></p>
@@ -109,6 +113,14 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 </div></div>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
+/* подсказка «как установить на экран Домой»: только в браузере (не в уже установленном приложении) */
+(function(){const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/.test(ua),inst=navigator.standalone||matchMedia('(display-mode: standalone)').matches;
+  const box=document.getElementById('inst');if(!ios||inst||localStorage.getItem('instno'))return;
+  const safari=/Safari\//.test(ua)&&!/CriOS|FxiOS|EdgiOS|YaBrowser|OPiOS|Telegram|Instagram|FBAN|FBAV|VK|GSA\//.test(ua);
+  box.innerHTML='<span class="x" onclick="this.parentNode.hidden=true;try{localStorage.setItem(\'instno\',1)}catch(_){}">✕</span>'+(safari?
+    '<b>📲 Установить на экран «Домой»</b><ol><li>Нажмите <b>⋯</b> (справа внизу) или кнопку <b>Поделиться</b> (квадратик со стрелкой вверх)</li><li>Выберите <b>«Поделиться»</b>, пролистайте вниз → <b>«На экран „Домой“»</b></li><li>Включите «Открыть как веб-приложение» → <b>«Добавить»</b></li></ol>Дальше открывайте значок «Вдвоём» на экране «Домой».':
+    '<b>📲 Откройте эту страницу в Safari</b><ol><li>Нажмите <b>⋯</b> или значок браузера справа вверху/внизу</li><li><b>«Открыть в Safari»</b> (или скопируйте ссылку и вставьте в Safari)</li><li>В Safari появится подсказка, как добавить на экран «Домой»</li></ol>Из Telegram, Яндекса и Chrome на экран «Домой» добавить нельзя.');
+  box.hidden=false})();
 const $=id=>document.getElementById(id),v=$('v');
 const me=Math.random().toString(36).slice(2,8);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._h);e._h=setTimeout(()=>e.classList.remove('on'),1400)}
@@ -186,7 +198,8 @@ let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;
 const LIVE={send:()=>{},toast:()=>{},log:()=>{},out:()=>'',hear:()=>{}};
 const LVA={cap:null,play:null,src:null,proc:null,on:false,sid:'',seq:0,acc:[],all:[],frac:0,t0:0};
 function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)();
-    try{LVA.dest=LVA.play.createMediaStreamDestination();LVA.el=new Audio();LVA.el.srcObject=LVA.dest.stream;LVA.el.setAttribute('playsinline','')}catch(_){LVA.dest=null}}
+    try{LVA.dest=LVA.play.createMediaStreamDestination();LVA.el=new Audio();LVA.el.srcObject=LVA.dest.stream;LVA.el.setAttribute('playsinline','')}catch(_){LVA.dest=null}
+    try{const g=LVA.play.createGain();g.gain.value=0.00001;const o=LVA.play.createOscillator();o.frequency.value=40;o.connect(g);g.connect(LVA.dest||LVA.play.destination);o.start()}catch(_){}}
   if(LVA.play.state!=='running')LVA.play.resume().catch(()=>{});
   if(LVA.el&&LVA.el.paused)LVA.el.play().catch(()=>{});
   const o=LIVE.out();if(o!==LVA.sink){LVA.sink=o;const t=LVA.el&&LVA.el.setSinkId?LVA.el:LVA.play;if(t.setSinkId)t.setSinkId(o||'').catch(()=>{})}return LVA.play}
@@ -208,7 +221,7 @@ function lvWav(parts){let n=0;parts.forEach(p=>{if(p)n+=p.length});const b=new A
 function lvFlush(end){const a=LVA.acc;LVA.acc=[];if(a.length){const u=new Uint8Array(a.length);for(let i=0;i<a.length;i++)u[i]=muEnc(a[i]);
     LVA.all.push(u);LIVE.send({k:'pcm',sid:LVA.sid,seq:LVA.seq++,d:lvB64(u)})}
   if(end)LIVE.send({k:'pcm',sid:LVA.sid,end:1,seq:LVA.seq,dur:Math.round((performance.now()-LVA.t0)/1000)})}
-function liveStart(stream){if(LVA.on)return;
+function liveStart(stream){if(LVA.stopT){clearTimeout(LVA.stopT);LVA.stopT=null;liveStopNow()}if(LVA.on)return;
   if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{});
   const ctx=LVA.cap,ratio=ctx.sampleRate/16000;LVA.sid=Math.random().toString(36).slice(2,8);LVA.seq=0;LVA.acc=[];LVA.all=[];LVA.frac=0;LVA.t0=performance.now();
   LVA.src=ctx.createMediaStreamSource(stream);LVA.proc=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,2048,1,1);
@@ -216,26 +229,35 @@ function liveStart(stream){if(LVA.on)return;
     for(;i+ratio<=x.length;i+=ratio){let s=0,k=0;for(let j=Math.floor(i);j<Math.floor(i+ratio);j++){s+=x[j];k++}LVA.acc.push(k?s/k:0)}
     LVA.frac=i-x.length;if(LVA.acc.length>=3200)lvFlush(false)};
   LVA.src.connect(LVA.proc);LVA.proc.connect(ctx.destination);LVA.on=true}
-function liveStop(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect()}catch(_){}
+function liveStop(){if(!LVA.on||LVA.stopT)return;LVA.stopT=setTimeout(()=>{LVA.stopT=null;liveStopNow()},350)}
+function liveStopNow(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect()}catch(_){}
   const dur=(performance.now()-LVA.t0)/1000;if(dur>=0.4)LIVE.log(lvWav(LVA.all),dur,true)}
-/* --- приём: играем по порядку, с запасом 0,25 с --- */
-const LVP={};
-function pcmRecv(m){const ctx=lvPlayCtx();let P=LVP[m.sid];
+/* --- приём: играем по порядку, с запасом 0,25 с; края порций сглажены, в конце — тишина;
+   старые/повторные/опоздавшие порции не играем (иначе хвост фразы «заикается») --- */
+const LVP={},LVDONE={};
+function lvFade(f,a,b){const n=Math.min(160,f.length>>1);for(let i=0;i<n;i++){const k=i/n;if(a)f[i]*=k;if(b)f[f.length-1-i]*=k}}
+function lvFinish(sid){const P=LVP[sid];if(!P||P.done)return;P.done=true;clearTimeout(P.timer);LVDONE[sid]=1;delete LVP[sid];
+  LIVE.hear(false);LIVE.log(lvWav(P.all),P.dur||1,false)}
+function pcmRecv(m){if(LVDONE[m.sid])return;const ctx=lvPlayCtx();let P=LVP[m.sid];
   if(!P){if(m.end&&m.seq===0)return;P=LVP[m.sid]={q:{},want:0,next:0,all:[],timer:null};LIVE.hear(true)}
-  if(m.end){P.end=m.seq;P.dur=m.dur}else{const u=lvUnB64(m.d);P.q[m.seq]=u;P.all[m.seq]=u}
-  const pump=()=>{while(P.q[P.want]){const u=P.q[P.want];delete P.q[P.want];P.want++;const f=new Float32Array(u.length);for(let i=0;i<u.length;i++)f[i]=muDec(u[i]);
+  P.lastT=performance.now();
+  if(m.end){P.end=m.seq;P.dur=m.dur}else if(m.seq>=P.want&&!P.q[m.seq]){const u=lvUnB64(m.d);P.q[m.seq]=u;P.all[m.seq]=u}
+  const pump=()=>{while(P.q[P.want]){const u=P.q[P.want];delete P.q[P.want];P.want++;
+      const f=new Float32Array(u.length);for(let i=0;i<u.length;i++)f[i]=muDec(u[i]);
+      const start=ctx.currentTime+0.05>P.next,last=!P.q[P.want];lvFade(f,start,last);
       const b=ctx.createBuffer(1,f.length,16000);b.getChannelData(0).set(f);const s=ctx.createBufferSource();s.buffer=b;s.connect(lvOut());
       const t=Math.max(ctx.currentTime+0.25,P.next);s.start(t);P.next=t+b.duration}
-    if(P.end!=null&&P.want>=P.end&&!P.done){P.done=true;LIVE.hear(false);LIVE.log(lvWav(P.all),P.dur||1,false);delete LVP[m.sid]}};
-  pump();clearTimeout(P.timer);   /* потерялась порция — через 0,5 с пропускаем её */
-  P.timer=setTimeout(()=>{if(P.done)return;const keys=Object.keys(P.q).map(Number);if(keys.length){P.want=Math.min(...keys);pump()}
-    else if(P.end!=null&&!P.done){P.want=P.end;pump()}},500)}
+    if(P.end!=null&&P.want>=P.end)lvFinish(m.sid)};
+  pump();if(P.done)return;clearTimeout(P.timer);   /* потерялась порция — через 0,5 с пропускаем её (только вперёд) */
+  P.timer=setTimeout(()=>{if(P.done)return;const keys=Object.keys(P.q).map(Number).filter(k=>k>=P.want);
+    if(keys.length){P.want=Math.min(...keys);pump()}else if(P.end!=null){P.want=P.end;pump()}
+    else setTimeout(()=>{if(!P.done&&performance.now()-P.lastT>4000)lvFinish(m.sid)},4100)}   /* конец фразы потерялся */,500)}
 
 /* --- рация: держите 🎙 — собеседник слышит сразу (живой звук), фраза потом остаётся в чате --- */
 const b64=lvB64,unb64=lvUnB64;
 let stream=null;
 LIVE.send=send;LIVE.toast=toast;LIVE.log=(b,d,mine)=>vmLog(b,d,mine);LIVE.hear=on=>$('ptt').classList.toggle('hear',on);
-async function pttDown(e){e&&e.preventDefault();if(LVA.on)return;if(!room){$('setup').hidden=false;return}lvUnlock();
+async function pttDown(e){e&&e.preventDefault();if(LVA.on&&!LVA.stopT)return;if(!room){$('setup').hidden=false;return}lvUnlock();
   try{if(!stream||!stream.getAudioTracks().some(t=>t.readyState==='live'))stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(_){toast('🎙 нет доступа к микрофону');return}
   liveStart(stream);$('ptt').classList.add('rec');if(navigator.vibrate)navigator.vibrate(20)}
 function pttUp(e){e&&e.preventDefault();if(!LVA.on)return;liveStop();$('ptt').classList.remove('rec')}
