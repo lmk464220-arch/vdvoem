@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Вдвоём"><meta name="theme-color" content="#0b0b0c">
+<title>Смотрим вдвоём</title>
+<link rel="apple-touch-icon" id="appicon">
+<style>
+:root{--bg:#0b0b0c;--panel:rgba(30,30,36,.78);--text:#f2f2f2;--muted:#9a9aa2;--ok:#3ecf6e;--warn:#f5b83d;--bad:#ff4d4d;--accent:#ff3d7f;
+ --glass:linear-gradient(135deg,rgba(60,60,70,.62),rgba(28,28,34,.7) 45%,rgba(50,50,60,.62));--edge:1px solid rgba(255,255,255,.18)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,system-ui,sans-serif;overflow:hidden}
+#amb{position:fixed;inset:-10%;width:120%;height:120%;filter:blur(30px) saturate(150%) brightness(.4);z-index:0}
+.app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.top{display:flex;align-items:center;gap:8px;padding:8px 12px}
+.pill{background:var(--glass);border:var(--edge);border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.pill.ok{background:linear-gradient(180deg,rgba(62,207,110,.6),rgba(62,207,110,.3))}
+.top .sp{flex:1}
+.vwrap{position:relative;margin:0 10px;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:16/9;flex-shrink:0;border:2px solid transparent;transition:border-color .2s}
+.vwrap.paused{border-color:var(--accent)}
+video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+.toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+.cd{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 120px/1 -apple-system,system-ui,sans-serif;color:#fff;text-shadow:0 0 30px var(--accent)}
+.cd[hidden]{display:none}
+.ctl{display:flex;align-items:center;gap:8px;padding:10px 12px 4px}
+.ctl button{flex:0 0 auto;font:600 17px -apple-system,system-ui,sans-serif;color:#fff;background:var(--glass);border:var(--edge);border-radius:999px;padding:10px 14px}
+.ctl #pp{flex:1;font-size:20px;background:linear-gradient(180deg,rgba(255,61,127,.75),rgba(255,61,127,.45))}
+.seek{display:flex;align-items:center;gap:8px;padding:2px 14px 6px;font:13px ui-monospace,Menlo,monospace;color:var(--muted)}
+.seek input{flex:1;accent-color:var(--accent)}
+.chat{flex:1;min-height:0;margin:6px 10px 0;background:var(--glass);border:var(--edge);border-radius:20px;display:flex;flex-direction:column;overflow:hidden}
+.log{flex:1;overflow:auto;padding:10px 12px;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch}
+.log>div:first-child{margin-top:auto}.log div{margin:3px 0;max-width:85%;padding:7px 11px;border-radius:16px;font-size:16px;word-wrap:break-word}
+.log .me{align-self:flex-end;background:rgba(255,61,127,.35)}.log .them{align-self:flex-start;background:rgba(255,255,255,.12)}
+.log .big{font-size:34px;background:none;padding:0 4px}.log .sys{align-self:center;background:none;color:var(--muted);font-size:13px}
+.log .vm{text-decoration:underline dotted}
+.side{display:contents}
+.emo{display:flex;gap:2px;overflow-x:auto;padding:4px 8px}.emo button{font-size:26px;background:none;border:0;padding:2px 4px}
+.quick{display:flex;gap:6px;overflow-x:auto;padding:2px 10px 6px}.quick button{flex:0 0 auto;font:600 14px -apple-system,system-ui,sans-serif;color:#fff;background:rgba(255,255,255,.1);border:var(--edge);border-radius:999px;padding:7px 12px}
+.inp{display:flex;gap:8px;padding:6px 10px 10px;align-items:center}
+.inp input{flex:1;font:16px -apple-system,system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.3);border:var(--edge);border-radius:999px;padding:11px 14px}
+.inp button{font-size:20px;color:#fff;background:var(--accent);border:0;border-radius:50%;width:44px;height:44px}
+#ptt{background:rgba(255,255,255,.14);border:var(--edge);touch-action:none;-webkit-user-select:none;user-select:none}
+#ptt.rec{background:var(--accent);box-shadow:0 0 0 6px rgba(255,61,127,.35)}#ptt.hear{box-shadow:0 0 0 4px rgba(62,207,110,.7)}
+.sheet{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
+.sheet[hidden]{display:none}
+.sbox{width:100%;background:#17171a;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));border-top:var(--edge)}
+.sbox h2{margin:0 0 8px;font-size:22px}.sbox p{color:var(--muted);margin:6px 0 12px;font-size:15px}
+.sbox button,.sbox label.btn{display:block;width:100%;text-align:center;font:600 18px -apple-system,system-ui,sans-serif;padding:14px;border-radius:14px;border:0;background:var(--accent);color:#fff;margin:8px 0}
+.sbox button.sec{background:#2a2a30}
+.sbox input{width:100%;font:700 26px ui-monospace,Menlo,monospace;text-align:center;padding:12px;border-radius:14px;border:0;margin:6px 0}
+.code{font:800 48px ui-monospace,Menlo,monospace;letter-spacing:6px;color:var(--ok);text-align:center;margin:8px 0}
+.st{min-height:20px;font-size:15px;color:var(--warn)}
+@media (orientation:landscape){.app{flex-direction:row}.vwrap{flex:1;aspect-ratio:auto;height:calc(100% - 20px);margin:10px}
+ .side{width:340px;display:flex;flex-direction:column;height:100%;padding:6px 0}}
+</style></head><body>
+<canvas id="amb" width="32" height="18"></canvas>
+<div class="app">
+ <div class="vwrap paused" id="vw"><video id="v" playsinline webkit-playsinline preload="auto"></video><div class="toast" id="toast"></div><div class="cd" id="cd" hidden></div></div>
+ <div class="side">
+  <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><span class="pill" id="markn" title="Метки">🏷 0</span><button class="pill" id="menu" style="color:#fff">⋯</button></div>
+  <div class="ctl"><button id="back">↺ 10</button><button id="pp">▶ Пуск</button><button id="fwd">10 ↻</button><button id="mark">🔥</button></div>
+  <div class="seek"><span id="cur">0:00</span><input type="range" id="sk" min="0" max="1000" value="0"><span id="dur">0:00</span></div>
+  <div class="chat"><div class="log" id="log"></div>
+   <div class="emo" id="emo"></div>
+   <div class="quick" id="quick"></div>
+   <div class="inp"><button id="ptt" title="Рация: держите и говорите">🎙</button><input id="txt" placeholder="Сообщение…" enterkeyhint="send"><button id="send">➤</button></div>
+  </div>
+ </div>
+</div>
+<div class="sheet" id="setup"><div class="sbox">
+ <h2>👥 Смотрим вдвоём</h2>
+ <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
+ <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
+ <p id="fname" style="color:var(--ok)"></p>
+ <p>2. Комната: один создаёт и присылает код, второй входит по коду.</p>
+ <button id="mk">Создать комнату</button>
+ <div class="code" id="code"></div>
+ <input id="cin" placeholder="код" autocapitalize="off" autocomplete="off" maxlength="6">
+ <button id="join" class="sec">Войти по коду</button>
+ <div class="st" id="st"></div>
+ <button id="close" class="sec">Готово</button>
+</div></div>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),v=$('v');
+const me=Math.random().toString(36).slice(2,8);
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._h);e._h=setTimeout(()=>e.classList.remove('on'),1400)}
+function fmt(t){t=Math.max(0,Math.floor(t||0));return (t>=3600?Math.floor(t/3600)+':'+String(Math.floor(t%3600/60)).padStart(2,'0'):Math.floor(t/60))+':'+String(t%60).padStart(2,'0')}
+/* значок для экрана «Домой» */
+{const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');x.fillStyle='#17171a';x.fillRect(0,0,180,180);
+ x.fillStyle='#ff3d7f';x.beginPath();x.arc(90,82,58,0,7);x.fill();x.fillStyle='#fff';x.beginPath();x.moveTo(72,54);x.lineTo(72,110);x.lineTo(116,82);x.fill();
+ x.fillStyle='#ffe14d';x.font='900 30px -apple-system';x.textAlign='center';x.fillText('ТА',90,168);$('appicon').href=c.toDataURL()}
+/* --- видео --- */
+let unlocked=false;
+function unlock(){if(unlocked||!v.src)return;unlocked=true;const p=v.play();if(p)p.then(()=>v.pause()).catch(()=>{unlocked=false})}
+$('pick').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;v.src=URL.createObjectURL(f);v.load();$('fname').textContent='✓ '+f.name;try{localStorage.setItem('tox_fname',f.name)}catch(_){}unlock()});
+v.addEventListener('loadedmetadata',()=>{$('dur').textContent=fmt(v.duration);try{const p=JSON.parse(localStorage.getItem('tox_pos')||'null');if(p&&p.t>30){v.currentTime=p.t;toast('↪ с '+fmt(p.t))}}catch(_){}});
+v.addEventListener('pause',()=>{$('vw').classList.add('paused');$('pp').textContent='▶ Пуск'});
+v.addEventListener('play',()=>{$('vw').classList.remove('paused');$('pp').textContent='⏸ Пауза'});
+setInterval(()=>{if(v.duration){$('cur').textContent=fmt(v.currentTime);if(!sk.drag)$('sk').value=Math.round(1000*v.currentTime/v.duration);try{localStorage.setItem('tox_pos',JSON.stringify({t:v.currentTime}))}catch(_){}}},500);
+const sk=$('sk');sk.addEventListener('input',()=>{sk.drag=true;if(v.duration)$('cur').textContent=fmt(sk.value/1000*v.duration)});
+sk.addEventListener('change',()=>{sk.drag=false;if(!v.duration)return;v.currentTime=sk.value/1000*v.duration;send({k:'seek',t:v.currentTime})});
+function playPause(){if(!v.src){$('setup').hidden=false;return}unlock();
+  if(v.paused){if(!started&&ok&&v.currentTime<1){send({k:'cd',t:v.currentTime});countdown(v.currentTime);return}v.play();send({k:'play',t:v.currentTime})}
+  else{v.pause();send({k:'pause',t:v.currentTime})}}
+let started=false,cdOn=false;
+function countdown(t){if(cdOn)return;cdOn=true;started=true;if(t!=null&&Math.abs(v.currentTime-t)>0.3)v.currentTime=t;const e=$('cd');e.hidden=false;let n=3;e.textContent=n;
+  const iv=setInterval(()=>{n--;if(n>0)e.textContent=n;else{clearInterval(iv);e.hidden=true;cdOn=false;v.play()}},1000)}
+$('pp').onclick=playPause;$('vw').onclick=playPause;
+$('back').onclick=()=>{v.currentTime=Math.max(0,v.currentTime-10);send({k:'seek',t:v.currentTime})};
+$('fwd').onclick=()=>{v.currentTime=Math.min(v.duration||0,v.currentTime+10);send({k:'seek',t:v.currentTime})};
+/* фон — размытый кадр */
+{const ax=$('amb').getContext('2d');setInterval(()=>{if(!v.paused&&v.readyState>=2)try{ax.drawImage(v,0,0,32,18)}catch(_){}},300)}
+/* не гасить экран во время просмотра */
+let wl=null;async function wake(){try{if('wakeLock' in navigator&&!wl)wl=await navigator.wakeLock.request('screen');wl&&wl.addEventListener('release',()=>wl=null)}catch(_){}}
+v.addEventListener('play',wake);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!v.paused)wake()});
+/* --- связь: те же комнаты, что у плеера на Mac (MQTT, два брокера) --- */
+const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
+function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);const js=JSON.stringify(m);mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1})})}
+function up(){if(ok)return;ok=true;$('room').textContent='👥 вдвоём';$('room').classList.add('ok');$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
+  if(host)setInterval(()=>{if(!v.paused)send({k:'tick',t:v.currentTime})},10000)}
+function join(code,h){room='toxanton/room/'+code;host=h;mqs.forEach(c=>{try{c.end(true)}catch(_){}});mqs=[];
+  if(!window.mqtt){$('st').textContent='Нет интернета';return}let opened=false;
+  BROKERS.forEach((u,k)=>{const c=mqtt.connect(u,{clientId:'toxm_'+me+'_'+k,clean:true,reconnectPeriod:2000,connectTimeout:8000});mqs.push(c);
+    c.on('connect',()=>c.subscribe(room,{qos:1},()=>{if(!opened){opened=true;if(h){$('code').textContent=code;$('st').textContent='Отправьте код напарнику…'}else $('st').textContent='Подключаюсь…'}
+      if(!h||ok)c.publish(room,JSON.stringify({k:'hello',from:me,id:me+'-h'+(++n)}),{qos:1})}));
+    c.on('message',(t,msg)=>{try{recv(JSON.parse(msg.toString()))}catch(_){}})});
+  try{localStorage.setItem('tox_room',JSON.stringify({code,h}))}catch(_){}}
+function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.add(m.id)}
+  if(m.k==='hello'){send({k:'hi'});up()}else if(m.k==='hi')up();
+  else if(m.k==='play'){if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;started=true;if(v.paused)v.play().catch(()=>toast('Нажмите ▶'));toast('▶ напарник')}
+  else if(m.k==='pause'){if(!v.paused)v.pause();if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;if(!m.auto)toast('⏸ напарник')}
+  else if(m.k==='seek'){v.currentTime=m.t;toast('↪ напарник')}
+  else if(m.k==='tick'){if(!v.paused&&Math.abs(v.currentTime-m.t)>0.5)v.currentTime=m.t}
+  else if(m.k==='cd')countdown(m.t);
+  else if(m.k==='chat'){add(m.txt,false);toast('💬 '+m.txt)}
+  else if(m.k==='mark'){marks++;$('markn').textContent='🏷 '+marks;toast('🔥 напарник отметил')}
+  else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m)}
+$('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true)};
+$('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false)};
+$('close').onclick=()=>{$('setup').hidden=true;unlock()};$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
+/* --- чат --- */
+const EMO=/^(\p{Extended_Pictographic}|️|‍|\s)+$/u;
+function add(t,mine){const d=document.createElement('div');d.className=(mine?'me':'them')+(EMO.test(t)?' big':'');d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9}
+function sys(t){const d=document.createElement('div');d.className='sys';d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9}
+function say(t){t=t.trim();if(!t)return;if(!room){$('setup').hidden=false;return}send({k:'chat',txt:t.slice(0,300)});add(t,true)}
+$('send').onclick=()=>{say($('txt').value);$('txt').value=''};$('txt').addEventListener('keydown',e=>{if(e.key==='Enter'){say($('txt').value);$('txt').value='';$('txt').blur()}});
+'😂 🤣 😱 🤦 🙄 😡 🔥 👍 👎 ❤️ 🤡 💀'.split(' ').forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>say(e);$('emo').appendChild(b)});
+['Пауза!','Погнали','Назад','Смотри!','Ахаха','Ок'].forEach(q=>{const b=document.createElement('button');b.textContent=q;b.onclick=()=>say(q);$('quick').appendChild(b)});
+/* --- метки --- */
+let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;send({k:'mark',kind:'fire',t:+v.currentTime.toFixed(2)});toast('🔥 метка')};
+/* --- рация: держите 🎙. iPhone пишет mp4 — фраза уходит целиком после отпускания; живой поток (webm) принимается, если отправил Chrome --- */
+let rec=null,recT0=0,stream=null;
+function b64(u){let b='';for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(b)}
+function unb64(d){const s=atob(d),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
+async function pttDown(e){e&&e.preventDefault();if(rec)return;if(!room){$('setup').hidden=false;return}
+  try{if(!stream||!stream.getAudioTracks().some(t=>t.readyState==='live'))stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}})}catch(_){toast('🎙 нет доступа к микрофону');return}
+  const mime=['audio/mp4','audio/webm;codecs=opus','audio/webm'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported(t))||'';
+  rec=new MediaRecorder(stream,mime?{mimeType:mime}:{});const parts=[];recT0=performance.now();rec.ondataavailable=ev=>{if(ev.data.size)parts.push(ev.data)};
+  rec.onstop=async()=>{const dur=(performance.now()-recT0)/1000,r=rec;rec=null;$('ptt').classList.remove('rec');if(dur<0.4)return;
+    const blob=new Blob(parts,{type:r.mimeType}),d=b64(new Uint8Array(await blob.arrayBuffer())),id=Math.random().toString(36).slice(2,8),k=Math.ceil(d.length/60000);
+    for(let i=0;i<k;i++)send({k:'vm',id,i,n:k,mime:r.mimeType,dur:Math.round(dur),d:d.slice(i*60000,(i+1)*60000)});vmLog(blob,dur,true)};
+  rec.start();$('ptt').classList.add('rec');if(navigator.vibrate)navigator.vibrate(20)}
+function pttUp(e){e&&e.preventDefault();if(rec&&rec.state==='recording')rec.stop()}
+['touchstart','mousedown'].forEach(t=>$('ptt').addEventListener(t,pttDown));['touchend','touchcancel','mouseup','mouseleave'].forEach(t=>$('ptt').addEventListener(t,pttUp));
+function vmPlay(b){new Audio(URL.createObjectURL(b)).play().catch(()=>toast('Нажмите на голосовое в чате'))}
+function vmLog(b,dur,mine){const d=document.createElement('div');d.className=mine?'me':'them';d.innerHTML='<span class="vm">🎙 голосовое, '+Math.max(1,Math.round(dur))+' с ▶</span>';d.onclick=()=>vmPlay(b);$('log').appendChild(d);$('log').scrollTop=1e9}
+const vmBuf={};function vmRecv(m){const b=vmBuf[m.id]=vmBuf[m.id]||[];b[m.i]=m.d;if(b.filter(x=>x).length<m.n)return;delete vmBuf[m.id];
+  const blob=new Blob([unb64(b.join(''))],{type:m.mime||'audio/mp4'});vmLog(blob,m.dur,false);toast('🎙 напарник');vmPlay(blob)}
+const lives={};function lvRecv(m){let L=lives[m.sid]||(lives[m.sid]={q:{},mime:m.mime});$('ptt').classList.add('hear');
+  if(m.end){L.total=m.seq;L.dur=m.dur}else L.q[m.seq]=unb64(m.d);
+  if(L.total!=null&&Object.keys(L.q).length>=L.total&&!L.done){L.done=true;$('ptt').classList.remove('hear');const blob=new Blob([...Array(L.total).keys()].map(i=>L.q[i]).filter(Boolean),{type:L.mime});vmLog(blob,L.dur||1,false);vmPlay(blob)}}
+/* старт: сразу показать настройку; вспомнить последнюю комнату */
+try{const r=JSON.parse(localStorage.getItem('tox_room')||'null');if(r){$('cin').value=r.code}}catch(_){}
+</script></body></html>
