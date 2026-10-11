@@ -15,7 +15,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:16px/
 .app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .top{display:flex;align-items:center;gap:8px;padding:8px 12px}
 .pill{background:var(--glass);border:var(--edge);border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
-.pill.ok{background:linear-gradient(180deg,rgba(62,207,110,.6),rgba(62,207,110,.3))}
+.pill.ok{background:linear-gradient(180deg,rgba(62,207,110,.6),rgba(62,207,110,.3))}#room.ok{background:var(--glass)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);box-shadow:0 0 6px var(--bad);margin-right:6px;vertical-align:1px}#room.ok .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
 .top .sp{flex:1}
 .vwrap{position:relative;margin:0 10px;border-radius:18px;overflow:hidden;background:#000;flex:1;min-height:200px;border:2px solid transparent;transition:border-color .2s}
 .vwrap.paused{border-color:var(--accent)}
@@ -99,7 +100,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
   <div class="ovl" id="log"></div></div>
   <div class="cams" id="cams" hidden><div class="tile"><video id="rcam" autoplay playsinline muted></video><span id="camst">соединяю…</span></div><div class="tile me" id="ltile"><video id="lcam" autoplay playsinline muted></video></div><button id="camx">✕</button></div></div>
  <div class="side">
-  <div class="top"><span class="pill" id="room">👥 не подключены</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><button class="pill" id="menu" style="color:#fff">⋯</button></div>
+  <div class="top"><span class="pill" id="room"><i class="dot"></i>Нет</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><button class="pill" id="menu" style="color:#fff">⋯</button></div>
   <div class="ctl"><button id="back">↺ 10</button><button id="pp">▶ Пуск</button><button id="fwd">10 ↻</button></div>
   <div class="seek"><span id="cur">0:00</span><input type="range" id="sk" min="0" max="1000" value="0"><span id="dur">0:00</span></div>
   <div class="dock2">
@@ -168,8 +169,11 @@ v.addEventListener('play',wake);document.addEventListener('visibilitychange',()=
 /* --- связь: те же комнаты, что у плеера на Mac (MQTT, два брокера) --- */
 const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
 function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);const js=JSON.stringify(m);mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1})})}
-function up(){if(ok)return;ok=true;$('room').textContent='👥 вдвоём';$('room').classList.add('ok');$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
-  if(host)setInterval(()=>{if(!v.paused)send({k:'tick',t:v.currentTime})},10000)}
+let lastPeer=0,tickT=null;function ind(on){$('room').innerHTML='<i class="dot"></i>'+(on?'Да':'Нет');$('room').classList.toggle('ok',on)}
+function up(){if(ok)return;ok=true;ind(true);$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
+  if(host&&!tickT)tickT=setInterval(()=>{if(!v.paused)send({k:'tick',t:v.currentTime})},10000)}
+/* связь живая? раз в 5 с «я тут»; 15 с тишины от напарника — «Нет» */
+setInterval(()=>{if(!room)return;send({k:'hb'});if(ok&&Date.now()-lastPeer>15000){ok=false;ind(false);sys('напарник пропал')}},5000);
 function join(code,h){room='toxanton/room/'+code;host=h;mqs.forEach(c=>{try{c.end(true)}catch(_){}});mqs=[];
   if(!window.mqtt){$('st').textContent='Нет интернета';return}let opened=false;
   BROKERS.forEach((u,k)=>{const c=mqtt.connect(u,{clientId:'toxm_'+me+'_'+k,clean:true,reconnectPeriod:2000,connectTimeout:8000});mqs.push(c);
@@ -177,7 +181,7 @@ function join(code,h){room='toxanton/room/'+code;host=h;mqs.forEach(c=>{try{c.en
       if(!h||ok)c.publish(room,JSON.stringify({k:'hello',from:me,id:me+'-h'+(++n)}),{qos:1})}));
     c.on('message',(t,msg)=>{try{recv(JSON.parse(msg.toString()))}catch(_){}})});
   try{localStorage.setItem('tox_room',JSON.stringify({code,h}))}catch(_){}}
-function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.add(m.id)}
+function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.add(m.id)}lastPeer=Date.now();if(!ok&&m.k==='hb')up();
   if(m.k==='hello'){send({k:'hi'});up()}else if(m.k==='hi')up();
   else if(m.k==='play'){if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;started=true;if(v.paused)v.play().catch(()=>toast('Нажмите ▶'));toast('▶ напарник')}
   else if(m.k==='pause'){if(!v.paused)v.pause();if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;if(!m.auto)toast('⏸ напарник')}
