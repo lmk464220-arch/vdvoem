@@ -194,21 +194,36 @@ $('send').onclick=()=>{say($('txt').value);$('txt').value=''};$('emob').onclick=
 let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;send({k:'mark',kind:'fire',t:+v.currentTime.toFixed(2)});toast('🔥 метка')};
 /* ===== живая рация: звук 16 кГц, μ-law, порции по 0,2 с через комнату; у собеседника играет сразу (Web Audio) =====
    Работает одинаково в Chrome, Safari и на iPhone. Хуки задаёт приложение: LIVE.send(msg), LIVE.toast(text),
-   LIVE.log(blob,dur,mine), LIVE.out() — id устройства вывода (наушники) или '', LIVE.hear(on). */
-const LIVE={send:()=>{},toast:()=>{},log:()=>{},out:()=>'',hear:()=>{}};
-const LVA={cap:null,play:null,src:null,proc:null,on:false,sid:'',seq:0,acc:[],all:[],frac:0,t0:0};
-function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)();
-    try{LVA.dest=LVA.play.createMediaStreamDestination();LVA.el=new Audio();LVA.el.srcObject=LVA.dest.stream;LVA.el.setAttribute('playsinline','')}catch(_){LVA.dest=null}
-    try{const g=LVA.play.createGain();g.gain.value=0.00001;const o=LVA.play.createOscillator();o.frequency.value=40;o.connect(g);g.connect(LVA.dest||LVA.play.destination);o.start()}catch(_){}}
+   LIVE.log(blob,dur,mine) или null (не сохранять фразы в чат), LIVE.out() — id устройства вывода (наушники) или '',
+   LIVE.hear(on), LIVE.video() — видео шоу: пока говорит напарник, шоу приглушается до LIVE.duck (0…1). */
+const LIVE={send:()=>{},toast:()=>{},log:null,out:()=>'',hear:()=>{},video:()=>null,duck:0.35,boost:2};
+const LVA={cap:null,play:null,src:null,proc:null,on:false,sid:'',seq:0,acc:[],all:[],rest:null,t0:0,lead:0.3};
+function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)();const c=LVA.play;
+    try{LVA.dest=c.createMediaStreamDestination();LVA.el=new Audio();LVA.el.srcObject=LVA.dest.stream;LVA.el.setAttribute('playsinline','')}catch(_){LVA.dest=null}
+    const out=LVA.dest||c.destination;
+    /* рация громче и ровнее: усиление + компрессор (не даёт перегружать) */
+    try{LVA.comp=c.createDynamicsCompressor();LVA.comp.threshold.value=-24;LVA.comp.knee.value=12;LVA.comp.ratio.value=4;LVA.comp.attack.value=0.005;LVA.comp.release.value=0.2;
+      LVA.boost=c.createGain();LVA.boost.gain.value=LIVE.boost;LVA.boost.connect(LVA.comp);LVA.comp.connect(out)}catch(_){LVA.boost=null}
+    /* постоянная «почти тишина» в выход: поток не пустеет между фразами */
+    try{const g=c.createGain();g.gain.value=0.00001;const o=c.createOscillator();o.frequency.value=40;o.connect(g);g.connect(out);o.start()}catch(_){}}
   if(LVA.play.state!=='running')LVA.play.resume().catch(()=>{});
   if(LVA.el&&LVA.el.paused)LVA.el.play().catch(()=>{});
   const o=LIVE.out();if(o!==LVA.sink){LVA.sink=o;const t=LVA.el&&LVA.el.setSinkId?LVA.el:LVA.play;if(t.setSinkId)t.setSinkId(o||'').catch(()=>{})}return LVA.play}
-function lvOut(){return LVA.dest||LVA.play.destination}
+function lvOut(){return LVA.boost||LVA.dest||LVA.play.destination}
+/* --- приглушение шоу, пока говорит напарник. Где громкость видео не меняется (iPhone) — через Web Audio --- */
+function lvVolOK(v){if(LVA.volok==null){const t=v.volume;try{v.volume=0.5}catch(_){}LVA.volok=Math.abs(v.volume-0.5)<0.01;try{v.volume=t}catch(_){}}return LVA.volok}
+function lvRoute(){const v=LIVE.video();if(!v||LVA.vgain||lvVolOK(v)||!LVA.play||LVA.play.state!=='running')return;
+  try{const c=LVA.play;LVA.vgain=c.createGain();c.createMediaElementSource(v).connect(LVA.vgain);LVA.vgain.connect(LVA.dest||c.destination)}catch(_){LVA.vgain=null;LVA.volok=true}}
+function lvDuck(on){const v=LIVE.video();if(!v)return;const to=on?LIVE.duck:1;lvRoute();
+  if(LVA.vgain){const g=LVA.vgain.gain,t=LVA.play.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(to,t+(on?0.15:0.6));return}
+  clearInterval(LVA.duckT);const base=LVA.vbase!=null?LVA.vbase:(LVA.vbase=v.volume);const tgt=base*to;
+  LVA.duckT=setInterval(()=>{const d=tgt-v.volume;if(Math.abs(d)<0.02){v.volume=tgt;clearInterval(LVA.duckT);if(!on)LVA.vbase=null;return}v.volume=Math.max(0,Math.min(1,v.volume+d*(on?0.5:0.15)))},30)}
 function lvUnlock(){try{lvPlayCtx()}catch(_){}
-  try{if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{})}catch(_){}}
+  try{if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{});lvWorklet()}catch(_){}
+  setTimeout(lvRoute,300)}
 /* iPhone запускает звук только из касания — «будим» звук при любом касании/клике */
-['touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(!LVA.play||LVA.play.state!=='running'||(LVA.el&&LVA.el.paused)||!LVA.cap||LVA.cap.state!=='running')lvUnlock()},{passive:true}));   /* вызывать из нажатия пользователя (iPhone без этого молчит) */
-function muEnc(x){x=Math.max(-1,Math.min(1,x));const s=x<0?0x80:0;let m=Math.log(1+255*Math.abs(x))/Math.log(256);return (~(s|Math.round(m*127)))&0xFF}
+['touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(!LVA.play||LVA.play.state!=='running'||(LVA.el&&LVA.el.paused)||!LVA.cap||LVA.cap.state!=='running'||(!LVA.vgain&&LIVE.video()&&LVA.volok!==true))lvUnlock()},{passive:true}));
+function muEnc(x){x=Math.max(-1,Math.min(1,x||0));const s=x<0?0x80:0;let m=Math.log(1+255*Math.abs(x))/Math.log(256);return (~(s|Math.round(m*127)))&0xFF}
 function muDec(u){u=~u&0xFF;const s=u&0x80,m=(u&0x7F)/127,x=(Math.pow(256,m)-1)/255;return s?-x:x}
 function lvB64(u){let b='';for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(b)}
 function lvUnB64(d){const s=atob(d),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
@@ -217,46 +232,59 @@ function lvWav(parts){let n=0;parts.forEach(p=>{if(p)n+=p.length});const b=new A
   v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
   w(36,'data');v.setUint32(40,n*2,true);let o=44;parts.forEach(p=>{if(p)for(let i=0;i<p.length;i++){v.setInt16(o,Math.round(muDec(p[i])*32767),true);o+=2}});
   return new Blob([b],{type:'audio/wav'})}
-/* --- отправка --- */
+/* --- отправка: захват AudioWorklet (отдельный поток, не «заикается», когда страница занята), иначе ScriptProcessor --- */
+function lvWorklet(){const c=LVA.cap;if(!c||LVA.wk||!c.audioWorklet||!window.AudioWorkletNode)return;LVA.wk='loading';
+  const code="class C extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(1024);this.n=0}process(i){const x=i[0]&&i[0][0];if(x){for(let k=0;k<x.length;k++){this.b[this.n++]=x[k];if(this.n===1024){this.port.postMessage(this.b);this.b=new Float32Array(1024);this.n=0}}}return true}}registerProcessor('lv-cap',C)";
+  const url=URL.createObjectURL(new Blob([code],{type:'application/javascript'}));
+  c.audioWorklet.addModule(url).then(()=>{LVA.wk='ok'}).catch(()=>{LVA.wk='no'})}
+function lvFeed(x){if(!LVA.on)return;const ratio=LVA.cap.sampleRate/16000;let a=x;
+  if(LVA.rest&&LVA.rest.length){a=new Float32Array(LVA.rest.length+x.length);a.set(LVA.rest);a.set(x,LVA.rest.length)}
+  let p=LVA.pos||0;while(Math.floor(p+ratio)<=a.length){let s=0,k=0;for(let j=Math.floor(p);j<Math.floor(p+ratio);j++){s+=a[j];k++}LVA.acc.push(k?s/k:0);p+=ratio}
+  const f=Math.floor(p);LVA.rest=a.slice(f);LVA.pos=p-f;if(LVA.acc.length>=3200)lvFlush(false)}
 function lvFlush(end){const a=LVA.acc;LVA.acc=[];if(a.length){const u=new Uint8Array(a.length);for(let i=0;i<a.length;i++)u[i]=muEnc(a[i]);
-    LVA.all.push(u);LIVE.send({k:'pcm',sid:LVA.sid,seq:LVA.seq++,d:lvB64(u)})}
+    if(LIVE.log)LVA.all.push(u);LIVE.send({k:'pcm',sid:LVA.sid,seq:LVA.seq++,d:lvB64(u)})}
   if(end)LIVE.send({k:'pcm',sid:LVA.sid,end:1,seq:LVA.seq,dur:Math.round((performance.now()-LVA.t0)/1000)})}
 function liveStart(stream){if(LVA.stopT){clearTimeout(LVA.stopT);LVA.stopT=null;liveStopNow()}if(LVA.on)return;
-  if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{});
-  const ctx=LVA.cap,ratio=ctx.sampleRate/16000;LVA.sid=Math.random().toString(36).slice(2,8);LVA.seq=0;LVA.acc=[];LVA.all=[];LVA.frac=0;LVA.t0=performance.now();
-  LVA.src=ctx.createMediaStreamSource(stream);LVA.proc=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,2048,1,1);
-  LVA.proc.onaudioprocess=e=>{if(!LVA.on)return;const x=e.inputBuffer.getChannelData(0);let i=LVA.frac;
-    for(;i+ratio<=x.length;i+=ratio){let s=0,k=0;for(let j=Math.floor(i);j<Math.floor(i+ratio);j++){s+=x[j];k++}LVA.acc.push(k?s/k:0)}
-    LVA.frac=i-x.length;if(LVA.acc.length>=3200)lvFlush(false)};
-  LVA.src.connect(LVA.proc);LVA.proc.connect(ctx.destination);LVA.on=true}
+  if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{});lvWorklet();
+  const ctx=LVA.cap;LVA.sid=Math.random().toString(36).slice(2,8);LVA.seq=0;LVA.acc=[];LVA.all=[];LVA.rest=null;LVA.pos=0;LVA.t0=performance.now();
+  LVA.src=ctx.createMediaStreamSource(stream);
+  if(LVA.wk==='ok'){LVA.proc=new AudioWorkletNode(ctx,'lv-cap');LVA.proc.port.onmessage=e=>lvFeed(e.data)}
+  else{LVA.proc=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,2048,1,1);LVA.proc.onaudioprocess=e=>lvFeed(e.inputBuffer.getChannelData(0).slice())}
+  const mute=ctx.createGain();mute.gain.value=0;LVA.src.connect(LVA.proc);LVA.proc.connect(mute);mute.connect(ctx.destination);LVA.mute=mute;LVA.on=true}
 function liveStop(){if(!LVA.on||LVA.stopT)return;LVA.stopT=setTimeout(()=>{LVA.stopT=null;liveStopNow()},350)}
-function liveStopNow(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect()}catch(_){}
-  const dur=(performance.now()-LVA.t0)/1000;if(dur>=0.4)LIVE.log(lvWav(LVA.all),dur,true)}
-/* --- приём: играем по порядку, с запасом 0,25 с; края порций сглажены, в конце — тишина;
-   старые/повторные/опоздавшие порции не играем (иначе хвост фразы «заикается») --- */
+function liveStopNow(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect();LVA.mute.disconnect()}catch(_){}
+  const dur=(performance.now()-LVA.t0)/1000;if(LIVE.log&&dur>=0.4)LIVE.log(lvWav(LVA.all),dur,true)}
+/* --- приём: играем по порядку с запасом (сам растёт, если сеть «дёргается»); края порций сглажены;
+   старые/повторные/опоздавшие порции не играем --- */
 const LVP={},LVDONE={};
 function lvFade(f,a,b){const n=Math.min(160,f.length>>1);for(let i=0;i<n;i++){const k=i/n;if(a)f[i]*=k;if(b)f[f.length-1-i]*=k}}
+function lvHear(on){LIVE.hear(on);lvDuck(on)}
 function lvFinish(sid){const P=LVP[sid];if(!P||P.done)return;P.done=true;clearTimeout(P.timer);LVDONE[sid]=1;delete LVP[sid];
-  LIVE.hear(false);LIVE.log(lvWav(P.all),P.dur||1,false)}
+  if(!Object.keys(LVP).length)setTimeout(()=>{if(!Object.keys(LVP).length)lvHear(false)},Math.max(0,(P.next-LVA.play.currentTime)*1000));
+  if(LIVE.log)LIVE.log(lvWav(P.all),P.dur||1,false)}
 function pcmRecv(m){if(LVDONE[m.sid])return;const ctx=lvPlayCtx();let P=LVP[m.sid];
-  if(!P){if(m.end&&m.seq===0)return;P=LVP[m.sid]={q:{},want:0,next:0,all:[],timer:null};LIVE.hear(true)}
+  if(!P){if(m.end&&m.seq===0)return;P=LVP[m.sid]={q:{},want:0,next:0,all:[],timer:null};lvHear(true)}
   P.lastT=performance.now();
-  if(m.end){P.end=m.seq;P.dur=m.dur}else if(m.seq>=P.want&&!P.q[m.seq]){const u=lvUnB64(m.d);P.q[m.seq]=u;P.all[m.seq]=u}
+  if(m.end){P.end=m.seq;P.dur=m.dur}else if(m.seq>=P.want&&!P.q[m.seq]){const u=lvUnB64(m.d);P.q[m.seq]=u;if(LIVE.log)P.all[m.seq]=u}
   const pump=()=>{while(P.q[P.want]){const u=P.q[P.want];delete P.q[P.want];P.want++;
       const f=new Float32Array(u.length);for(let i=0;i<u.length;i++)f[i]=muDec(u[i]);
-      const start=ctx.currentTime+0.05>P.next,last=!P.q[P.want];lvFade(f,start,last);
+      const now=ctx.currentTime,gap=now+0.02>P.next;
+      if(gap&&P.next>0)LVA.lead=Math.min(0.9,LVA.lead+0.15);   /* не успели — увеличиваем запас */
+      lvFade(f,gap,!P.q[P.want]&&P.end!=null);
       const b=ctx.createBuffer(1,f.length,16000);b.getChannelData(0).set(f);const s=ctx.createBufferSource();s.buffer=b;s.connect(lvOut());
-      const t=Math.max(ctx.currentTime+0.25,P.next);s.start(t);P.next=t+b.duration}
+      const t=gap?now+LVA.lead:P.next;s.start(t);P.next=t+b.duration}
     if(P.end!=null&&P.want>=P.end)lvFinish(m.sid)};
-  pump();if(P.done)return;clearTimeout(P.timer);   /* потерялась порция — через 0,5 с пропускаем её (только вперёд) */
+  pump();if(P.done)return;clearTimeout(P.timer);   /* потерялась порция — пропускаем её (только вперёд) */
   P.timer=setTimeout(()=>{if(P.done)return;const keys=Object.keys(P.q).map(Number).filter(k=>k>=P.want);
     if(keys.length){P.want=Math.min(...keys);pump()}else if(P.end!=null){P.want=P.end;pump()}
-    else setTimeout(()=>{if(!P.done&&performance.now()-P.lastT>4000)lvFinish(m.sid)},4100)}   /* конец фразы потерялся */,500)}
+    else setTimeout(()=>{if(!P.done&&performance.now()-P.lastT>4000)lvFinish(m.sid)},4100)},700)}
+/* запас медленно уменьшается, если сеть ровная */
+setInterval(()=>{if(!Object.keys(LVP).length&&LVA.lead>0.3)LVA.lead=Math.max(0.3,LVA.lead-0.05)},10000);
 
 /* --- рация: держите 🎙 — собеседник слышит сразу (живой звук), фраза потом остаётся в чате --- */
 const b64=lvB64,unb64=lvUnB64;
 let stream=null;
-LIVE.send=send;LIVE.toast=toast;LIVE.log=(b,d,mine)=>vmLog(b,d,mine);LIVE.hear=on=>$('ptt').classList.toggle('hear',on);
+LIVE.send=send;LIVE.toast=toast;LIVE.log=null;LIVE.video=()=>$('v');LIVE.hear=on=>$('ptt').classList.toggle('hear',on);
 async function pttDown(e){e&&e.preventDefault();if(LVA.on&&!LVA.stopT)return;if(!room){$('setup').hidden=false;return}lvUnlock();
   try{if(!stream||!stream.getAudioTracks().some(t=>t.readyState==='live'))stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(_){toast('🎙 нет доступа к микрофону');return}
   liveStart(stream);$('ptt').classList.add('rec');if(navigator.vibrate)navigator.vibrate(20)}
