@@ -196,13 +196,13 @@ let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;
    Работает одинаково в Chrome, Safari и на iPhone. Хуки задаёт приложение: LIVE.send(msg), LIVE.toast(text),
    LIVE.log(blob,dur,mine) или null (не сохранять фразы в чат), LIVE.out() — id устройства вывода (наушники) или '',
    LIVE.hear(on), LIVE.video() — видео шоу: пока говорит напарник, шоу приглушается до LIVE.duck (0…1). */
-const LIVE={send:()=>{},toast:()=>{},log:null,out:()=>'',hear:()=>{},video:()=>null,duck:0.35,boost:2};
+const LIVE={send:()=>{},toast:()=>{},log:null,out:()=>'',hear:()=>{},video:()=>null,duck:0.35,boost:1.4};
 const LVA={cap:null,play:null,src:null,proc:null,on:false,sid:'',seq:0,acc:[],all:[],rest:null,t0:0,lead:0.3};
 function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)();const c=LVA.play;
     try{LVA.dest=c.createMediaStreamDestination();LVA.el=new Audio();LVA.el.srcObject=LVA.dest.stream;LVA.el.setAttribute('playsinline','')}catch(_){LVA.dest=null}
     const out=LVA.dest||c.destination;
     /* рация громче и ровнее: усиление + компрессор (не даёт перегружать) */
-    try{LVA.comp=c.createDynamicsCompressor();LVA.comp.threshold.value=-24;LVA.comp.knee.value=12;LVA.comp.ratio.value=4;LVA.comp.attack.value=0.005;LVA.comp.release.value=0.2;
+    try{LVA.comp=c.createDynamicsCompressor();LVA.comp.threshold.value=-18;LVA.comp.knee.value=10;LVA.comp.ratio.value=3;LVA.comp.attack.value=0.005;LVA.comp.release.value=0.2;
       LVA.boost=c.createGain();LVA.boost.gain.value=LIVE.boost;LVA.boost.connect(LVA.comp);LVA.comp.connect(out)}catch(_){LVA.boost=null}
     /* постоянная «почти тишина» в выход: поток не пустеет между фразами */
     try{const g=c.createGain();g.gain.value=0.00001;const o=c.createOscillator();o.frequency.value=40;o.connect(g);g.connect(out);o.start()}catch(_){}}
@@ -241,18 +241,23 @@ function lvFeed(x){if(!LVA.on)return;const ratio=LVA.cap.sampleRate/16000;let a=
   if(LVA.rest&&LVA.rest.length){a=new Float32Array(LVA.rest.length+x.length);a.set(LVA.rest);a.set(x,LVA.rest.length)}
   let p=LVA.pos||0;while(Math.floor(p+ratio)<=a.length){let s=0,k=0;for(let j=Math.floor(p);j<Math.floor(p+ratio);j++){s+=a[j];k++}LVA.acc.push(k?s/k:0);p+=ratio}
   const f=Math.floor(p);LVA.rest=a.slice(f);LVA.pos=p-f;if(LVA.acc.length>=3200)lvFlush(false)}
-function lvFlush(end){const a=LVA.acc;LVA.acc=[];if(a.length){const u=new Uint8Array(a.length);for(let i=0;i<a.length;i++)u[i]=muEnc(a[i]);
+function lvGate(a){let g=LVA.gg==null?1:LVA.gg;for(let i=0;i<a.length;i+=160){let e=0;const n=Math.min(160,a.length-i);for(let j=0;j<n;j++)e+=a[i+j]*a[i+j];
+    const r=Math.sqrt(e/n),t=r<0.006?0.12:r<0.015?0.12+0.88*(r-0.006)/0.009:1;
+    for(let j=0;j<n;j++){g+=(t-g)*(t>g?0.02:0.002);a[i+j]*=g}}LVA.gg=g}
+function lvFlush(end){const a=LVA.acc;LVA.acc=[];if(a.length){lvGate(a);const u=new Uint8Array(a.length);for(let i=0;i<a.length;i++)u[i]=muEnc(a[i]);
     if(LIVE.log)LVA.all.push(u);LIVE.send({k:'pcm',sid:LVA.sid,seq:LVA.seq++,d:lvB64(u)})}
   if(end)LIVE.send({k:'pcm',sid:LVA.sid,end:1,seq:LVA.seq,dur:Math.round((performance.now()-LVA.t0)/1000)})}
 function liveStart(stream){if(LVA.stopT){clearTimeout(LVA.stopT);LVA.stopT=null;liveStopNow()}if(LVA.on)return;
   if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{});lvWorklet();
-  const ctx=LVA.cap;LVA.sid=Math.random().toString(36).slice(2,8);LVA.seq=0;LVA.acc=[];LVA.all=[];LVA.rest=null;LVA.pos=0;LVA.t0=performance.now();
+  const ctx=LVA.cap;LVA.sid=Math.random().toString(36).slice(2,8);LVA.seq=0;LVA.acc=[];LVA.all=[];LVA.rest=null;LVA.pos=0;LVA.gg=1;LVA.t0=performance.now();
   LVA.src=ctx.createMediaStreamSource(stream);
   if(LVA.wk==='ok'){LVA.proc=new AudioWorkletNode(ctx,'lv-cap');LVA.proc.port.onmessage=e=>lvFeed(e.data)}
   else{LVA.proc=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,2048,1,1);LVA.proc.onaudioprocess=e=>lvFeed(e.inputBuffer.getChannelData(0).slice())}
-  const mute=ctx.createGain();mute.gain.value=0;LVA.src.connect(LVA.proc);LVA.proc.connect(mute);mute.connect(ctx.destination);LVA.mute=mute;LVA.on=true}
+  let node=LVA.src;LVA.lp=[];for(const fq of [7000,7000]){const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=fq;f.Q.value=0.7;node.connect(f);node=f;LVA.lp.push(f)}
+  const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=90;node.connect(hp);node=hp;LVA.lp.push(hp);
+  const mute=ctx.createGain();mute.gain.value=0;node.connect(LVA.proc);LVA.proc.connect(mute);mute.connect(ctx.destination);LVA.mute=mute;LVA.on=true}
 function liveStop(){if(!LVA.on||LVA.stopT)return;LVA.stopT=setTimeout(()=>{LVA.stopT=null;liveStopNow()},350)}
-function liveStopNow(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect();LVA.mute.disconnect()}catch(_){}
+function liveStopNow(){if(!LVA.on)return;LVA.on=false;lvFlush(true);try{LVA.proc.disconnect();LVA.src.disconnect();LVA.mute.disconnect();(LVA.lp||[]).forEach(f=>f.disconnect())}catch(_){}
   const dur=(performance.now()-LVA.t0)/1000;if(LIVE.log&&dur>=0.4)LIVE.log(lvWav(LVA.all),dur,true)}
 /* --- приём: играем по порядку с запасом (сам растёт, если сеть «дёргается»); края порций сглажены;
    старые/повторные/опоздавшие порции не играем --- */
