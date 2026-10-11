@@ -25,8 +25,8 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 @media (orientation:portrait){
  .vwrap.camon{display:flex;flex-direction:column;gap:6px;background:transparent}
  .vwrap.camon .vpic{position:relative;inset:auto;flex:0 0 auto;aspect-ratio:16/9;border-radius:14px;overflow:hidden}
- .vwrap.camon .cams{position:relative;inset:auto;flex:1;min-height:0;display:flex;gap:6px;align-items:stretch}
- .vwrap.camon .cams .tile,.vwrap.camon .cams .tile.me,.vwrap.camon.big .cams .tile{flex:1;width:auto;height:auto;aspect-ratio:auto;border-radius:14px}
+ .vwrap.camon .cams{position:relative;inset:auto;flex:1;min-height:0;display:flex;gap:6px;align-items:center;justify-content:center}
+ .vwrap.camon .cams .tile,.vwrap.camon .cams .tile.me,.vwrap.camon.big .cams .tile{flex:0 0 calc(37.5% - 3px);width:auto;height:75%;aspect-ratio:auto;border-radius:14px}
  .vwrap.camon .cams button{top:6px;right:6px;bottom:auto;left:auto}}
 .toast{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 12px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.on{opacity:1}
@@ -181,10 +181,16 @@ let marks=0;$('mark').onclick=()=>{marks++;$('markn').textContent='🏷 '+marks;
    LIVE.log(blob,dur,mine), LIVE.out() — id устройства вывода (наушники) или '', LIVE.hear(on). */
 const LIVE={send:()=>{},toast:()=>{},log:()=>{},out:()=>'',hear:()=>{}};
 const LVA={cap:null,play:null,src:null,proc:null,on:false,sid:'',seq:0,acc:[],all:[],frac:0,t0:0};
-function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)()}
+function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.webkitAudioContext)();
+    try{LVA.dest=LVA.play.createMediaStreamDestination();LVA.el=new Audio();LVA.el.srcObject=LVA.dest.stream;LVA.el.setAttribute('playsinline','')}catch(_){LVA.dest=null}}
   if(LVA.play.state!=='running')LVA.play.resume().catch(()=>{});
-  const o=LIVE.out();if(LVA.play.setSinkId&&o!==LVA.sink){LVA.sink=o;LVA.play.setSinkId(o||'').catch(()=>{})}return LVA.play}
-function lvUnlock(){try{lvPlayCtx()}catch(_){}}   /* вызывать из нажатия пользователя (iPhone без этого молчит) */
+  if(LVA.el&&LVA.el.paused)LVA.el.play().catch(()=>{});
+  const o=LIVE.out();if(o!==LVA.sink){LVA.sink=o;const t=LVA.el&&LVA.el.setSinkId?LVA.el:LVA.play;if(t.setSinkId)t.setSinkId(o||'').catch(()=>{})}return LVA.play}
+function lvOut(){return LVA.dest||LVA.play.destination}
+function lvUnlock(){try{lvPlayCtx()}catch(_){}
+  try{if(!LVA.cap)LVA.cap=new (window.AudioContext||window.webkitAudioContext)();if(LVA.cap.state!=='running')LVA.cap.resume().catch(()=>{})}catch(_){}}
+/* iPhone запускает звук только из касания — «будим» звук при любом касании/клике */
+['touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(!LVA.play||LVA.play.state!=='running'||(LVA.el&&LVA.el.paused)||!LVA.cap||LVA.cap.state!=='running')lvUnlock()},{passive:true}));   /* вызывать из нажатия пользователя (iPhone без этого молчит) */
 function muEnc(x){x=Math.max(-1,Math.min(1,x));const s=x<0?0x80:0;let m=Math.log(1+255*Math.abs(x))/Math.log(256);return (~(s|Math.round(m*127)))&0xFF}
 function muDec(u){u=~u&0xFF;const s=u&0x80,m=(u&0x7F)/127,x=(Math.pow(256,m)-1)/255;return s?-x:x}
 function lvB64(u){let b='';for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(b)}
@@ -214,7 +220,7 @@ function pcmRecv(m){const ctx=lvPlayCtx();let P=LVP[m.sid];
   if(!P){if(m.end&&m.seq===0)return;P=LVP[m.sid]={q:{},want:0,next:0,all:[],timer:null};LIVE.hear(true)}
   if(m.end){P.end=m.seq;P.dur=m.dur}else{const u=lvUnB64(m.d);P.q[m.seq]=u;P.all[m.seq]=u}
   const pump=()=>{while(P.q[P.want]){const u=P.q[P.want];delete P.q[P.want];P.want++;const f=new Float32Array(u.length);for(let i=0;i<u.length;i++)f[i]=muDec(u[i]);
-      const b=ctx.createBuffer(1,f.length,16000);b.getChannelData(0).set(f);const s=ctx.createBufferSource();s.buffer=b;s.connect(ctx.destination);
+      const b=ctx.createBuffer(1,f.length,16000);b.getChannelData(0).set(f);const s=ctx.createBufferSource();s.buffer=b;s.connect(lvOut());
       const t=Math.max(ctx.currentTime+0.25,P.next);s.start(t);P.next=t+b.duration}
     if(P.end!=null&&P.want>=P.end&&!P.done){P.done=true;LIVE.hear(false);LIVE.log(lvWav(P.all),P.dur||1,false);delete LVP[m.sid]}};
   pump();clearTimeout(P.timer);   /* потерялась порция — через 0,5 с пропускаем её */
