@@ -73,6 +73,8 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .sbox h2{margin:0 0 8px;font-size:22px}.sbox p{color:var(--muted);margin:6px 0 12px;font-size:15px}
 .sbox button,.sbox label.btn{display:block;width:100%;text-align:center;font:600 18px -apple-system,system-ui,sans-serif;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.1));color:#fff;margin:8px 0}
 .sbox button.sec{background:#2a2a30}
+.sbox [hidden]{display:none!important}
+#share{background:linear-gradient(180deg,rgba(62,207,110,.55),rgba(62,207,110,.3));border-color:rgba(62,207,110,.7)}
 .sbox input{width:100%;font:700 26px ui-monospace,Menlo,monospace;text-align:center;padding:12px;border-radius:14px;border:0;margin:6px 0}
 .code{font:800 48px ui-monospace,Menlo,monospace;letter-spacing:6px;color:var(--ok);text-align:center;margin:8px 0}
 .st{min-height:20px;font-size:15px;color:var(--warn)}
@@ -136,7 +138,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 14</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 15</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -144,6 +146,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
  <p>2. Комната: один создаёт и присылает код, второй входит по коду.</p>
  <button id="mk">Создать комнату</button>
  <div class="code" id="code"></div>
+ <button id="share" hidden>📤 Отправить код напарнику</button>
  <input id="cin" placeholder="код" autocapitalize="off" autocomplete="off" maxlength="6">
  <button id="join" class="sec">Войти по коду</button>
  <div class="st" id="st"></div>
@@ -200,14 +203,14 @@ const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.hivemq.com:8884
 function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);m.ts=Date.now();const js=JSON.stringify(m);const fast=dc&&dc.readyState==='open';if(fast)try{dc.send(js)}catch(_){}
   if((!fast&&m.k!=='hb')||m.k==='lsig')mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1,properties:{messageExpiryInterval:20}})})}
 let lastPeer=0,tickT=null;function ind(on){$('room').innerHTML='<i class="dot"></i>'+(on?'Да':'Нет');$('room').classList.toggle('ok',on)}
-function up(){if(ok)return;ok=true;ind(true);$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
+function up(){if(ok)return;ok=true;ind(true);$('share').hidden=true;$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
   if(host&&!tickT)tickT=setInterval(()=>{if(!v.paused)send({k:'tick',t:v.currentTime})},10000)}
 /* связь живая? раз в 5 с «я тут»; 15 с тишины от напарника — «Нет» */
 setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-lastPeer>15000){ok=false;ind(false);sys('напарник пропал')}},3000);
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v14',DIAG=[];
+const VER='v15',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -224,7 +227,7 @@ let joinH=false,opened=false;const STALL=8000,RXMAX=6000;
 function brokerOpen(u,k){const c=mqtt.connect(u,{protocolVersion:5,properties:{sessionExpiryInterval:120},clientId:'toxm_'+me+'_'+k,clean:false,reconnectPeriod:500,connectTimeout:6000});
   c._u=u;c._k=k;c._rx=0;c._last=Date.now();c._pm=0;c._rc=0;dlog('B'+k+' соединяюсь');
   c.on('close',()=>dlog('B'+k+' закрыт'));c.on('offline',()=>dlog('B'+k+' нет сети'));c.on('error',e=>dlog('B'+k+' ошибка: '+(e&&e.message||e)));
-  c.on('connect',()=>{c._last=Date.now();c._rx=0;dlog('B'+k+' подключён');c.subscribe(room,{qos:1},()=>{if(!opened){opened=true;if(joinH){$('code').textContent=room.split('/').pop();$('st').textContent='Отправьте код напарнику…'}else $('st').textContent='Подключаюсь…'}
+  c.on('connect',()=>{c._last=Date.now();c._rx=0;dlog('B'+k+' подключён');c.subscribe(room,{qos:1},()=>{if(!opened){opened=true;if(joinH){$('code').textContent=room.split('/').pop();$('share').hidden=false;$('st').textContent='Ждём напарника…'}else $('st').textContent='Подключаюсь…'}
       if(sigOut)sigOut.ch.forEach(x=>{c.publish(room,JSON.stringify(Object.assign({},x,{from:me,id:me+'-c'+(++n),ts:Date.now()})),{qos:1,properties:{messageExpiryInterval:20}});dlog('B'+k+' → '+x.type+' сразу при подключении')});
       if(!joinH||ok||sigOut)c.publish(room,JSON.stringify({k:'hello',from:me,id:me+'-h'+(++n),ts:Date.now()}),{qos:1,properties:{messageExpiryInterval:20}})})});
   c.on('message',(t,msg)=>{c._last=Date.now();c._rx+=msg.length+room.length+10;let m;try{m=JSON.parse(msg.toString())}catch(_){return}
@@ -249,7 +252,11 @@ function recv(m){if(m.from===me)return;if(m.ts&&Date.now()-m.ts>60000)return;if(
   else if(m.k==='mark'){}
   else if(m.k==='pcm')pcmRecv(m);else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m);
   else if(m.k==='sig')sigRecv(m);else if(m.k==='lsig')lsigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
-$('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true)};
+$('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true);$('code').textContent=c;$('share').hidden=false;$('st').textContent='Ждём напарника…';$('st').style.color=''};
+/* «Отправить код напарнику»: системное меню iPhone — Telegram, WhatsApp, Сообщения и т.д.; если его нет — копируем */
+$('share').onclick=async()=>{const c=$('code').textContent;if(!c)return;const url=location.origin+location.pathname+'#'+c,text='👥 Смотрим вдвоём\nКод комнаты: '+c;
+  try{if(navigator.share){await navigator.share({title:'Вдвоём',text,url});return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(text+'\n'+url);toast('📋 Код скопирован — вставьте в чат')}catch(_){prompt('Скопируйте код и отправьте напарнику:',c)}};
 $('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false)};
 $('close').onclick=()=>{$('setup').hidden=true;unlock()};$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
 /* --- чат --- */
@@ -498,4 +505,6 @@ async function linkStart(initiator,offer,offerId){linkClose();const p=link=new R
   catch(e){dlog('ошибка звонка: '+(e&&e.message||e));if(link===p)linkClose()}}
 /* старт: сразу показать настройку; вспомнить последнюю комнату */
 try{const r=JSON.parse(localStorage.getItem('tox_room')||'null');if(r){$('cin').value=r.code}}catch(_){}
+/* открыли по ссылке с кодом — код уже подставлен, остаётся нажать «Войти по коду» */
+{const hc=(location.hash.match(/^#([a-z0-9]{6})$/)||[])[1];if(hc){$('cin').value=hc;$('st').textContent='Код подставлен — выберите видео и нажмите «Войти по коду»';$('st').style.color='var(--ok)'}}
 </script></body></html>
