@@ -101,19 +101,19 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
  .vwrap,.vwrap.camon{position:fixed;inset:0;margin:0;width:100vw;height:100vh;height:100dvh;max-width:none;aspect-ratio:auto;border:0;border-radius:0;z-index:0;background:#000}
  .vwrap.paused{border:0;box-shadow:inset 0 0 0 2px rgba(215,219,226,.5)}
  .vpic{position:absolute;inset:0}
- .ovl{left:calc(env(safe-area-inset-left) + 92px);top:52px;right:40%}
+ .ovl{left:calc(var(--il,10px) + 76px);top:52px;right:40%}
  #room,#camb,#menu{position:fixed;top:8px;z-index:4;margin:0;background:rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
- #room{left:calc(env(safe-area-inset-left) + 10px);max-width:none;white-space:nowrap;font-size:13px}
- #menu{right:calc(env(safe-area-inset-right) + 10px)}
- #camb{right:calc(env(safe-area-inset-right) + 62px)}
- .ctl{position:fixed;left:calc(env(safe-area-inset-left) + 8px);top:50%;transform:translateY(-50%);z-index:4;flex-direction:column;gap:8px;padding:0}
- .ctl button,.ctl #pp{width:64px;padding:8px 0;font-size:14px;background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.22);box-shadow:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
- .ctl #pp{height:64px;font-size:15px}
- .seek{position:fixed;z-index:4;left:calc(env(safe-area-inset-left) + 10px);bottom:calc(env(safe-area-inset-bottom) + 6px);width:calc(52% - env(safe-area-inset-left));padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.35);color:#ddd}
- .dock2{position:fixed;z-index:4;right:calc(env(safe-area-inset-right) + 8px);bottom:calc(env(safe-area-inset-bottom) + 4px);width:44%;margin:0}
+ #room{left:var(--il,10px);max-width:none;white-space:nowrap;font-size:13px}
+ #menu{right:var(--ir,10px)}
+ #camb{right:calc(var(--ir,10px) + 52px)}
+ .ctl{position:fixed;left:var(--cl,10px);top:50%;transform:translateY(-50%);z-index:4;flex-direction:column;gap:8px;padding:0}
+ .ctl button,.ctl #pp{width:58px;padding:8px 0;font-size:13px;border-radius:16px;background:rgba(0,0,0,.35);border-color:rgba(255,255,255,.22);box-shadow:none;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+ .ctl #pp{height:58px;font-size:14px}
+ .seek{position:fixed;z-index:4;left:var(--il,10px);bottom:calc(env(safe-area-inset-bottom) + 6px);width:calc(50% - var(--il,10px));padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.35);color:#ddd}
+ .dock2{position:fixed;z-index:4;right:var(--ir,10px);bottom:calc(env(safe-area-inset-bottom) + 4px);width:calc(48% - var(--ir,10px));margin:0}
  .inp{background:rgba(0,0,0,.35);box-shadow:none;padding:3px}
  .inp button{width:34px;height:34px;font-size:15px}.inp input{padding:5px 4px;font-size:15px}
- .cams{left:auto;right:calc(env(safe-area-inset-right) + 10px);top:52px;bottom:auto;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:6px;pointer-events:auto}
+ .cams{left:auto;right:var(--cr,10px);top:52px;bottom:auto;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:6px;pointer-events:auto}
  .cams .tile,.cams .tile.me{width:min(84px,calc((100dvh - 120px) / 2 * .75))}.cams.big .tile,.cams.big .tile.me{width:min(110px,calc((100dvh - 120px) / 2 * .75))}
  .cams button{top:-8px;right:-6px;left:auto;bottom:auto}
 }
@@ -134,8 +134,9 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
  </div>
 </div>
 <audio id="raud" autoplay playsinline></audio>
+<div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 13</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 14</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -206,7 +207,7 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v13',DIAG=[];
+const VER='v14',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -387,7 +388,7 @@ async function camStart(initiator,offer){if(!room){$('setup').hidden=false;retur
   if(camLocal)camLocal.getTracks().forEach(t=>pc.addTrack(t,camLocal));else pc.addTransceiver('video',{direction:'recvonly'});
   $('lcam').srcObject=camLocal;camPlay();$('ltile').hidden=!camLocal;pc.ontrack=e=>{$('rcam').srcObject=e.streams[0]||new MediaStream([e.track]);camPlay()};
   pc.onconnectionstatechange=()=>{if(!pc)return;const s=pc.connectionState;$('camst').textContent=s==='connected'?'':s==='failed'?'не удалось соединиться':s==='disconnected'?'связь прервалась…':'соединяю…'};
-  $('cams').hidden=false;$('vw').classList.add('camon');$('camb').classList.add('ok');$('camst').textContent='соединяю…';
+  $('cams').hidden=false;setTimeout(edges,50);$('vw').classList.add('camon');$('camb').classList.add('ok');$('camst').textContent='соединяю…';
   if(initiator){await pc.setLocalDescription(await pc.createOffer({offerToReceiveVideo:true}));await waitIce();sigSend('offer',pc.localDescription)}
   else{await pc.setRemoteDescription(offer);await pc.setLocalDescription(await pc.createAnswer());await waitIce();sigSend('answer',pc.localDescription)}}
 function camStop(tell){if(pc){pc.close();pc=null}if(camLocal){camLocal.getTracks().forEach(t=>t.stop());camLocal=null}
@@ -411,6 +412,16 @@ function micToggle(){micOn=!micOn;applyMic();micUI();toast(micOn?'🎙 микр�
 ['lcam','rcam'].forEach(id=>{const e=$(id);const fix=()=>{e.style.objectFit='fill';requestAnimationFrame(()=>requestAnimationFrame(()=>{e.style.objectFit='cover'}))};
   e.addEventListener('resize',fix);e.addEventListener('loadedmetadata',fix);e.addEventListener('playing',fix)});
 addEventListener('orientationchange',()=>setTimeout(()=>['lcam','rcam'].forEach(id=>$(id).dispatchEvent(new Event('resize'))),300));
+/* горизонтально: кнопки и камеры — либо целиком в чёрной полосе сбоку от шоу (если она достаточно широкая), либо целиком внутри картинки */
+function edges(){const W=innerWidth,H=innerHeight,R=document.documentElement.style;if(W<=H){return}
+  const pr=getComputedStyle($('safeprobe')),sl=parseFloat(pr.paddingLeft)||0,sr=parseFloat(pr.paddingRight)||0;
+  const ar=(v.videoWidth&&v.videoHeight)?v.videoWidth/v.videoHeight:16/9;const vw=Math.min(W,H*ar),bar=(W-vw)/2;
+  const CW=58,CAM=parseFloat(getComputedStyle($('lcam').parentNode).width)||84,G=8;
+  const il=Math.max(sl,bar)+G,ir=Math.max(sr,bar)+G;          /* внутри картинки */
+  R.setProperty('--il',il+'px');R.setProperty('--ir',ir+'px');
+  R.setProperty('--cl',(bar-sl>=CW+2*G?sl+(bar-sl-CW)/2:il)+'px');          /* кнопки слева */
+  R.setProperty('--cr',(bar-sr>=CAM+2*G?sr+(bar-sr-CAM)/2:ir)+'px')}       /* камеры справа */
+['resize','orientationchange'].forEach(e=>addEventListener(e,()=>setTimeout(edges,250)));v.addEventListener('loadedmetadata',edges);setTimeout(edges,0);
 function camPlay(){['lcam','rcam'].forEach(id=>{const e=$(id);if(e.srcObject&&e.paused)e.play().catch(()=>{})})}
 /* --- звук под присмотром (раз в 2 с, пока идёт звонок):
    1) iPhone может «заглушить» или закрыть микрофон (например, когда включается камера) — тогда берём микрофон заново и подменяем в звонке;
