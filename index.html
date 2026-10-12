@@ -62,6 +62,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .inp button{flex:0 0 auto;font-size:19px;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:50%;width:42px;height:42px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
 .inp #send{background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.14));border-color:rgba(255,255,255,.4)}
 #ptt{background:rgba(255,255,255,.14);border:var(--edge);touch-action:none;-webkit-user-select:none;user-select:none}
+#ptt.live{background:rgba(62,207,110,.45);border-color:rgba(62,207,110,.8)}#ptt.mut{background:rgba(255,77,77,.4)}
 #ptt.rec{background:rgba(255,255,255,.85);box-shadow:0 0 0 6px rgba(255,255,255,.25)}#ptt.hear{box-shadow:0 0 0 4px rgba(62,207,110,.7)}
 .sheet{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.6);display:flex;align-items:flex-end}
 .sheet[hidden]{display:none}
@@ -109,6 +110,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 </div>
  </div>
 </div>
+<audio id="raud" autoplay playsinline></audio>
 <div class="sheet" id="setup"><div class="sbox">
  <h2>👥 Смотрим вдвоём</h2>
  <div class="inst" id="inst" hidden></div>
@@ -168,7 +170,7 @@ let wl=null;async function wake(){try{if('wakeLock' in navigator&&!wl)wl=await n
 v.addEventListener('play',wake);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!v.paused)wake()});
 /* --- связь: те же комнаты, что у плеера на Mac (MQTT, два брокера) --- */
 const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
-function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);const js=JSON.stringify(m);mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1})})}
+function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);const js=JSON.stringify(m);mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1})});if(dc&&dc.readyState==='open')try{dc.send(js)}catch(_){}}
 let lastPeer=0,tickT=null;function ind(on){$('room').innerHTML='<i class="dot"></i>'+(on?'Да':'Нет');$('room').classList.toggle('ok',on)}
 function up(){if(ok)return;ok=true;ind(true);$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
   if(host&&!tickT)tickT=setInterval(()=>{if(!v.paused)send({k:'tick',t:v.currentTime})},10000)}
@@ -181,7 +183,7 @@ function join(code,h){room='toxanton/room/'+code;host=h;mqs.forEach(c=>{try{c.en
       if(!h||ok)c.publish(room,JSON.stringify({k:'hello',from:me,id:me+'-h'+(++n)}),{qos:1})}));
     c.on('message',(t,msg)=>{try{recv(JSON.parse(msg.toString()))}catch(_){}})});
   try{localStorage.setItem('tox_room',JSON.stringify({code,h}))}catch(_){}}
-function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.add(m.id)}lastPeer=Date.now();if(!ok&&m.k==='hb')up();
+function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.add(m.id)}lastPeer=Date.now();if(!ok&&m.k==='hb')up();if(m.from&&m.k!=='lsig')linkMaybe(m.from);
   if(m.k==='hello'){send({k:'hi'});up()}else if(m.k==='hi')up();
   else if(m.k==='play'){if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;started=true;if(v.paused)v.play().catch(()=>toast('Нажмите ▶'));toast('▶ напарник')}
   else if(m.k==='pause'){if(!v.paused)v.pause();if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;if(!m.auto)toast('⏸ напарник')}
@@ -191,7 +193,7 @@ function recv(m){if(m.from===me)return;if(m.id){if(seen.has(m.id))return;seen.ad
   else if(m.k==='chat'){add(m.txt,false);toast('💬 '+m.txt)}
   else if(m.k==='mark'){}
   else if(m.k==='pcm')pcmRecv(m);else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m);
-  else if(m.k==='sig')sigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
+  else if(m.k==='sig')sigRecv(m);else if(m.k==='lsig')lsigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
 $('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true)};
 $('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false)};
 $('close').onclick=()=>{$('setup').hidden=true;unlock()};$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
@@ -304,7 +306,7 @@ setInterval(()=>{if(!Object.keys(LVP).length&&LVA.lead>0.3)LVA.lead=Math.max(0.3
 const b64=lvB64,unb64=lvUnB64;
 let stream=null;
 LIVE.send=send;LIVE.toast=toast;LIVE.log=null;LIVE.video=()=>$('v');LIVE.hear=on=>$('ptt').classList.toggle('hear',on);
-async function pttDown(e){e&&e.preventDefault();if(LVA.on&&!LVA.stopT)return;if(!room){$('setup').hidden=false;return}lvUnlock();
+async function pttDown(e){e&&e.preventDefault();if(callOn()){micToggle();return}if(LVA.on&&!LVA.stopT)return;if(!room){$('setup').hidden=false;return}lvUnlock();
   try{if(!stream||!stream.getAudioTracks().some(t=>t.readyState==='live'))stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(_){toast('🎙 нет доступа к микрофону');return}
   liveStart(stream);$('ptt').classList.add('rec');if(navigator.vibrate)navigator.vibrate(20)}
 function pttUp(e){e&&e.preventDefault();if(!LVA.on)return;liveStop();$('ptt').classList.remove('rec')}
@@ -338,6 +340,46 @@ function camStop(tell){if(pc){pc.close();pc=null}if(camLocal){camLocal.getTracks
   $('rcam').srcObject=null;$('lcam').srcObject=null;$('cams').hidden=true;$('vw').classList.remove('camon');$('camb').classList.remove('ok');if(tell)send({k:'camoff'})}
 $('camb').onclick=()=>{pc?camStop(true):camStart(true)};
 $('camx').onclick=e=>{e.stopPropagation();camStop(true)};$('cams').onclick=e=>{e.stopPropagation();$('cams').classList.toggle('big')};
+
+/* --- постоянная голосовая связь + быстрый канал для чата/пауз: напрямую между устройствами (WebRTC),
+   без серверов-посредников. Комната (MQTT) нужна только для первого «рукопожатия».
+   Пока прямой связи нет — всё работает как раньше: через комнату, 🎙 — рация. --- */
+let link=null,dc=null,peerId='',micStream=null,micOn=true,linkTry=0,linkFails=0,linkDropT=null;
+const raud=$('raud');
+function callOn(){return !!(link&&link.connectionState==='connected'&&micStream)}
+function micUI(){const b=$('ptt');const on=callOn();b.classList.toggle('live',on&&micOn);b.classList.toggle('mut',on&&!micOn);
+  b.textContent=on&&!micOn?'🔇':'🎙';b.title=on?(micOn?'Микрофон включён — нажмите, чтобы выключить':'Микрофон выключен — нажмите, чтобы включить'):'Рация: держите и говорите'}
+function micToggle(){micOn=!micOn;if(micStream)micStream.getAudioTracks().forEach(t=>t.enabled=micOn);micUI();toast(micOn?'🎙 микрофон включён':'🔇 микрофон выключен')}
+function raudPlay(){if(raud.srcObject&&raud.paused)raud.play().catch(()=>toast('Коснитесь экрана, чтобы слышать напарника'))}
+['touchend','click'].forEach(t=>document.addEventListener(t,raudPlay,{passive:true}));
+function linkClose(){clearTimeout(linkDropT);if(dc){try{dc.close()}catch(_){}dc=null}if(link){try{link.close()}catch(_){}link=null}raud.srcObject=null;micUI()}
+/* кто начинает — решаем по id, чтобы оба не звонили одновременно; повтор раз в 8 с, не больше 6 попыток */
+function linkMaybe(from){if(from!==peerId){peerId=from;linkClose();linkFails=0}
+  if(link||!window.RTCPeerConnection||me>peerId||linkFails>=6||Date.now()-linkTry<8000)return;linkTry=Date.now();linkFails++;linkStart(true)}
+async function lsigSend(type,desc){const d=await zip(JSON.stringify(desc)),id=Math.random().toString(36).slice(2,7),k=Math.ceil(d.length/3000);
+  for(let i=0;i<k;i++)send({k:'lsig',type,id,i,n:k,to:peerId,d:d.slice(i*3000,(i+1)*3000)})}
+const lsigBuf={};async function lsigRecv(m){if(m.to&&m.to!==me)return;const b=lsigBuf[m.id]=lsigBuf[m.id]||[];b[m.i]=m.d;if(b.filter(x=>x).length<m.n)return;delete lsigBuf[m.id];
+  const desc=JSON.parse(await unzip(b.join('')));
+  if(m.type==='offer'){if(m.from!==peerId){peerId=m.from;linkFails=0}await linkStart(false,desc)}
+  else if(m.type==='answer'&&link&&link.signalingState==='have-local-offer')await link.setRemoteDescription(desc)}
+function waitIceL(p){return new Promise(r=>{if(p.iceGatheringState==='complete')return r();const t=setTimeout(r,3000);p.addEventListener('icegatheringstatechange',()=>{if(p.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
+async function linkStart(initiator,offer){linkClose();const p=link=new RTCPeerConnection({iceServers:ICE});
+  dc=p.createDataChannel('d',{negotiated:true,id:0});dc.onmessage=e=>{try{recv(JSON.parse(e.data))}catch(_){}};
+  dc.onopen=()=>sys('⚡ быстрый канал на связи');
+  try{if(!micStream||!micStream.getAudioTracks().some(t=>t.readyState==='live'))
+      micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    micStream.getAudioTracks().forEach(t=>t.enabled=micOn)}catch(_){micStream=null;toast('🎙 нет доступа к микрофону')}
+  if(link!==p)return;
+  if(micStream)micStream.getAudioTracks().forEach(t=>p.addTrack(t,micStream));else p.addTransceiver('audio',{direction:'recvonly'});
+  p.ontrack=e=>{raud.srcObject=e.streams[0]||new MediaStream([e.track]);raudPlay()};
+  p.onconnectionstatechange=()=>{if(link!==p)return;const s=p.connectionState;
+    if(s==='connected'){clearTimeout(linkDropT);linkFails=0;sys('🎧 голосовая связь включена');raudPlay()}
+    else if(s==='failed'){linkClose();sys('голосовая связь не соединилась — работает рация')}
+    else if(s==='disconnected'){clearTimeout(linkDropT);linkDropT=setTimeout(()=>{if(link===p&&p.connectionState!=='connected'){linkClose();sys('голосовая связь прервалась…')}},6000)}
+    micUI()};
+  try{if(initiator){await p.setLocalDescription(await p.createOffer());await waitIceL(p);if(link===p)lsigSend('offer',p.localDescription)}
+    else{await p.setRemoteDescription(offer);await p.setLocalDescription(await p.createAnswer());await waitIceL(p);if(link===p)lsigSend('answer',p.localDescription)}}
+  catch(_){if(link===p)linkClose()}}
 /* старт: сразу показать настройку; вспомнить последнюю комнату */
 try{const r=JSON.parse(localStorage.getItem('tox_room')||'null');if(r){$('cin').value=r.code}}catch(_){}
 </script></body></html>
