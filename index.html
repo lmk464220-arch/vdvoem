@@ -112,7 +112,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 </div>
 <audio id="raud" autoplay playsinline></audio>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 9</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 10</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -183,13 +183,13 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v9',DIAG=[];
+const VER='v10',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
   h+='комната: '+(room?'да':'нет')+' · лампочка: '+(ok?'Да':'Нет')+' · от напарника '+sec(lastPeer)+' назад\n';
   mqs.forEach(c=>{h+='B'+c._k+' '+c._u.split('/')[2]+': '+(c.connected?'подкл.':'НЕТ')+', тишина '+sec(c._last)+', принято '+c._rx+'б, от напарника '+c._pm+', переоткрыт '+c._rc+'\n'});
-  h+='звонок: '+(link?link.connectionState+' / ice '+link.iceConnectionState:'нет')+' · канал: '+(dc?dc.readyState:'нет')+' · микрофон: '+(micStream?'да':'нет')+'\n----\n';
+  h+='звонок: '+(link?link.connectionState+' / ice '+link.iceConnectionState:'нет')+' · канал: '+(dc?dc.readyState:'нет')+' · микрофон: '+(micStream?'да':'нет')+'\nзвук: '+AST+'\n----\n';
   return h+DIAG.join('\n')}
 let diagT=null;function diagShow(){$('diagt').textContent=diagText()}
 $('diagb').onclick=()=>{$('setup').hidden=true;$('diag').hidden=false;diagShow();clearInterval(diagT);diagT=setInterval(diagShow,1000)};
@@ -386,6 +386,22 @@ function micToggle(){micOn=!micOn;if(micStream)micStream.getAudioTracks().forEac
   e.addEventListener('resize',fix);e.addEventListener('loadedmetadata',fix);e.addEventListener('playing',fix)});
 addEventListener('orientationchange',()=>setTimeout(()=>['lcam','rcam'].forEach(id=>$(id).dispatchEvent(new Event('resize'))),300));
 function camPlay(){['lcam','rcam'].forEach(id=>{const e=$(id);if(e.srcObject&&e.paused)e.play().catch(()=>{})})}
+/* --- звук под присмотром (раз в 2 с, пока идёт звонок):
+   1) iPhone может «заглушить» или закрыть микрофон (например, когда включается камера) — тогда берём микрофон заново и подменяем в звонке;
+   2) если звук напарника не играет (iPhone не дал запустить) — пробуем снова и просим коснуться экрана;
+   3) счётчики: сколько звука реально ушло и пришло — видно в диагностике */
+let AST='—',astPrev=null,micFixing=false,hearAsked=false;
+setInterval(async()=>{if(!link||link.connectionState!=='connected'){AST='—';astPrev=null;return}
+  const tr=micStream&&micStream.getAudioTracks()[0];
+  if(!micFixing&&(!tr||tr.readyState==='ended'||tr.muted)){micFixing=true;dlog('микрофон '+(!tr?'нет':tr.readyState==='ended'?'закрыт':'заглушён системой')+' — беру заново');
+    try{const ns=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const nt=ns.getAudioTracks()[0];nt.enabled=micOn;
+      const snd=link.getSenders().find(x=>x.track&&x.track.kind==='audio')||link.getSenders().find(x=>!x.track);
+      if(snd){await snd.replaceTrack(nt);if(micStream)micStream.getTracks().forEach(t=>{if(t!==nt)t.stop()});micStream=ns;dlog('микрофон снова в звонке')}}
+    catch(e){dlog('микрофон не взять: '+(e&&e.message||e))}micFixing=false}
+  if(raud.srcObject&&raud.paused){raud.play().catch(()=>{if(!hearAsked){hearAsked=true;sys('🔊 коснитесь экрана, чтобы слышать напарника')}})}else hearAsked=false;
+  try{const st=await link.getStats();let out=0,inn=0,lvl=null;st.forEach(r=>{if(r.kind==='audio'||r.mediaType==='audio'){if(r.type==='outbound-rtp')out+=r.bytesSent||0;if(r.type==='inbound-rtp'){inn+=r.bytesReceived||0;if(r.audioLevel!=null)lvl=r.audioLevel}}});
+    const now=Date.now();if(astPrev){const dt=(now-astPrev.t)/1000;AST='ухо '+(raud.paused?'НЕ играет':'играет')+' · мик '+(tr?(micOn?'вкл':'выкл')+(tr.muted?' (заглушён)':''):'нет')+' · отправляю '+Math.round((out-astPrev.o)/dt/100)/10+' КБ/с · получаю '+Math.round((inn-astPrev.i)/dt/100)/10+' КБ/с'+(lvl!=null?' · громкость '+Math.round(lvl*100)+'%':'')}
+    astPrev={t:now,o:out,i:inn}}catch(_){}},2000);
 function raudPlay(){camPlay();if(raud.srcObject&&raud.paused)raud.play().catch(()=>toast('Коснитесь экрана, чтобы слышать напарника'))}
 ['touchend','click'].forEach(t=>document.addEventListener(t,raudPlay,{passive:true}));
 function linkClose(){clearTimeout(linkDropT);if(dc){try{dc.close()}catch(_){}dc=null}if(link){try{link.close()}catch(_){}link=null}raud.srcObject=null;micUI()}
