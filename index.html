@@ -141,7 +141,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 21</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 22</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -217,9 +217,11 @@ let wl=null;async function wake(){try{if('wakeLock' in navigator&&!wl)wl=await n
 v.addEventListener('play',wake);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!v.paused)wake()});
 /* --- связь: те же комнаты, что у плеера на Mac (MQTT, два брокера) --- */
 /* без VPN у вас работает только HiveMQ, и то лишь в первое мгновение после подключения — держим три независимых подключения к нему, со сдвигом по времени */
-const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://broker.hivemq.com:8884/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
+/* B0 — свой сервер в России (быстро, без блокировок); B1, B2 — запасной HiveMQ на случай, если свой недоступен */
+const OWN='wss://176-119-157-152.sslip.io/mqtt';
+const BROKERS=[OWN,'wss://broker.hivemq.com:8884/mqtt','wss://broker.hivemq.com:8884/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
 function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);m.ts=Date.now();const js=JSON.stringify(m);const fast=dc&&dc.readyState==='open';if(fast)try{dc.send(js)}catch(_){}
-  if((!fast&&m.k!=='hb')||m.k==='lsig')mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1,properties:{messageExpiryInterval:20}})})}
+  mqs.forEach(c=>{if(!c.connected)return;if(c._own?(!fast||m.k==='hb'||m.k==='lsig'):((!fast&&m.k!=='hb')||m.k==='lsig'))c.publish(room,js,{qos:1,properties:{messageExpiryInterval:20}})})}
 let lastPeer=0,tickT=null;function ind(on){$('room').innerHTML='<i class="dot"></i>'+(on?'Да':'Нет');$('room').classList.toggle('ok',on)}
 function up(){if(ok)return;ok=true;ind(true);$('share').hidden=true;if($('dlpick').hidden)$('setup').hidden=true;   /* напарник подключился — сразу в основное окно */$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
   if(host&&!tickT)tickT=setInterval(()=>{if(playing())send({k:'tick',t:T()})},10000)}
@@ -228,7 +230,7 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v21',DIAG=[];
+const VER='v22',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -243,7 +245,7 @@ $('diagc').onclick=()=>{const tx=diagText();(navigator.clipboard?navigator.clipb
   .catch(()=>{const r=document.createRange();r.selectNodeContents($('diagt'));const sl=getSelection();sl.removeAllRanges();sl.addRange(r);toast('Текст выделен — нажмите «Скопировать»')})};
 let joinH=false,opened=false;const STALL=8000,RXMAX=6000;
 function brokerOpen(u,k){const c=mqtt.connect(u,{protocolVersion:5,properties:{sessionExpiryInterval:120},clientId:'toxm_'+me+'_'+k,clean:false,reconnectPeriod:500,connectTimeout:6000});
-  c._u=u;c._k=k;c._rx=0;c._last=Date.now();c._pm=0;c._rc=0;dlog('B'+k+' соединяюсь');
+  c._u=u;c._k=k;c._own=(u===OWN);c._rx=0;c._last=Date.now();c._pm=0;c._rc=0;dlog('B'+k+' соединяюсь');
   c.on('close',()=>dlog('B'+k+' закрыт'));c.on('offline',()=>dlog('B'+k+' нет сети'));c.on('error',e=>dlog('B'+k+' ошибка: '+(e&&e.message||e)));
   c.on('connect',()=>{c._last=Date.now();c._rx=0;dlog('B'+k+' подключён');c.subscribe(room,{qos:1},()=>{if(!opened){opened=true;if(joinH){$('code').textContent=room.split('/').pop();$('share').hidden=false;$('st').textContent='Ждём напарника…'}else $('st').textContent='Подключаюсь…'}
       if(sigOut)sigOut.ch.forEach(x=>{c.publish(room,JSON.stringify(Object.assign({},x,{from:me,id:me+'-c'+(++n),ts:Date.now()})),{qos:1,properties:{messageExpiryInterval:20}});dlog('B'+k+' → '+x.type+' сразу при подключении')});
@@ -254,7 +256,7 @@ function brokerOpen(u,k){const c=mqtt.connect(u,{protocolVersion:5,properties:{s
 function brokerRecycle(i){const o=mqs[i];if(!o)return;o._rc++;dlog('B'+o._k+' переоткрываю: '+(o.connected?(o._rx>RXMAX?'много данных':'тишина '+Math.round((Date.now()-o._last)/1000)+'с'):'не подключён'));o._last=Date.now();o._rx=0;
   if(o.connected&&o.stream){try{o.stream.destroy()}catch(_){}return}
   o.options.reconnectPeriod=0;try{o.end(true)}catch(_){}mqs[i]=brokerOpen(o._u,o._k)}
-setInterval(()=>{if(!room||(dc&&dc.readyState==='open'))return;const t=Date.now();mqs.forEach((c,i)=>{const st=(dc&&dc.readyState==='open')?STALL:5000;if((c.connected&&(t-c._last>st||c._rx>RXMAX))||(!c.connected&&t-c._last>20000))brokerRecycle(i)})},2000);
+setInterval(()=>{if(!room||(dc&&dc.readyState==='open'))return;const t=Date.now();mqs.forEach((c,i)=>{if(c._own){if(!c.connected&&t-c._last>20000)brokerRecycle(i);return}const st=(dc&&dc.readyState==='open')?STALL:5000;if((c.connected&&(t-c._last>st||c._rx>RXMAX))||(!c.connected&&t-c._last>20000))brokerRecycle(i)})},2000);
 function join(code,h){room='toxanton/room/'+code;host=h;joinH=h;opened=false;mqs.forEach(c=>{try{c.options.reconnectPeriod=0;c.end(true)}catch(_){}});mqs=[];
   if(!window.mqtt){$('st').textContent='Нет интернета';return}
   BROKERS.forEach((u,k)=>{const o=brokerOpen(u,k);o._last-=k*2000;mqs.push(o)});   /* сдвиг: переподключаются в разные моменты */
@@ -403,7 +405,8 @@ const lives={};function lvRecv(m){let L=lives[m.sid]||(lives[m.sid]={q:{},mime:m
   if(L.total!=null&&Object.keys(L.q).length>=L.total&&!L.done){L.done=true;$('ptt').classList.remove('hear');const blob=new Blob([...Array(L.total).keys()].map(i=>L.q[i]).filter(Boolean),{type:L.mime});vmLog(blob,L.dur||1,false);vmPlay(blob)}}
 
 /* --- камеры: WebRTC напрямую между устройствами, описание соединения — через ту же комнату (совместимо с плеером на Mac) --- */
-let pc=null,camLocal=null;const ICE=[{urls:['stun:stun.l.google.com:19302','stun:stun.cloudflare.com:3478']}];
+let pc=null,camLocal=null;const ICE=[{urls:['stun:176.119.157.152:3478','stun:stun.l.google.com:19302']},
+  {urls:['turn:176.119.157.152:3478?transport=udp','turn:176.119.157.152:3478?transport=tcp'],username:'vdvoem',credential:'a667cb5739ba39c7'}];
 async function zip(str){const cs=new Blob([str]).stream().pipeThrough(new CompressionStream('deflate-raw'));return b64(new Uint8Array(await new Response(cs).arrayBuffer()))}
 async function unzip(d){return await new Response(new Blob([unb64(d)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()}
 async function sigSend(type,desc){const d=await zip(JSON.stringify(desc)),id=Math.random().toString(36).slice(2,7),k=Math.ceil(d.length/3000);
@@ -483,7 +486,7 @@ function sdpMini(sdp){const g=re=>(sdp.match(re)||[])[1]||'';const cs=[],seen={}
     if(w[1]!=='1'||w[2].toLowerCase()!=='udp'||!/^(host|srflx|relay)$/.test(ty))return;const k=w[4]+':'+w[5];if(seen[k])return;seen[k]=1;
     cs.push(ty[0]+','+w[4]+','+w[5])});
   const pick=t=>cs.filter(c=>c[0]===t);
-  return [g(/a=ice-ufrag:(\S+)/),g(/a=ice-pwd:(\S+)/),fpPack(g(/a=fingerprint:(\S+ \S+)/)),g(/a=setup:(\w+)/),[...pick('s').slice(0,2),...pick('r').slice(0,1),...(pick('s').length?[]:pick('h').slice(0,1))].join(';')].join('|')}
+  return [g(/a=ice-ufrag:(\S+)/),g(/a=ice-pwd:(\S+)/),fpPack(g(/a=fingerprint:(\S+ \S+)/)),g(/a=setup:(\w+)/),[...pick('s').slice(0,2),...pick('r').slice(0,2),...(pick('s').length?[]:pick('h').slice(0,1))].join(';')].join('|')}
 function sdpBuild(tpl,mini){const [u,pw,fp,setup,cl]=mini.split('|');const T={h:'host',s:'srflx',r:'relay'};
   const cands=(cl?cl.split(';'):[]).map((c,i)=>{const [t,ip,port]=c.split(',');const pr={h:2122260223,s:1686052607,r:41885439}[t]-i;return 'a=candidate:'+(i+1)+' 1 udp '+pr+' '+ip+' '+port+' typ '+T[t]+(t==='h'?'':' raddr 0.0.0.0 rport 0')});
   const extra=['a=ice-ufrag:'+u,'a=ice-pwd:'+pw,'a=fingerprint:'+fpUnpack(fp),'a=setup:'+setup,...cands];
