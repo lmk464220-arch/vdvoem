@@ -71,7 +71,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .inst{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.45}
 .inst[hidden]{display:none}.inst b{color:#fff}.inst .x{float:right;opacity:.6;padding:0 4px}
 .inst ol{margin:6px 0 0;padding-left:20px}.inst li{margin:3px 0}
-.sbox{width:100%;background:#17171a;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));border-top:var(--edge)}
+.sbox{max-height:calc(100vh - 64px);max-height:calc(100dvh - 64px);overflow-y:auto;-webkit-overflow-scrolling:touch;width:100%;background:#17171a;border-radius:24px 24px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));border-top:var(--edge)}
 .sbox h2{margin:0 0 8px;font-size:22px}.sbox p{color:var(--muted);margin:6px 0 12px;font-size:15px}
 .sbox button,.sbox label.btn{display:block;width:100%;text-align:center;font:600 18px -apple-system,system-ui,sans-serif;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.3);background:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.1));color:#fff;margin:8px 0}
 .sbox button.sec{background:#2a2a30}
@@ -141,7 +141,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 18</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 19</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -162,7 +162,6 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
  <input id="cin" placeholder="код" autocapitalize="off" autocomplete="off" maxlength="6">
  <button id="join" class="sec">Войти по коду</button>
  <div class="st" id="st"></div>
- <button id="close" class="sec">Готово</button>
  <button id="diagb" class="sec" style="font-size:15px;padding:10px">🩺 Диагностика связи</button>
 </div></div>
 <div class="sheet" id="diag" hidden><div class="sbox"><h2>🩺 Диагностика</h2><pre id="diagt" style="max-height:52vh;overflow:auto;font:11px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;background:#0d0d10;border-radius:12px;padding:10px;margin:0;-webkit-user-select:text;user-select:text"></pre><button id="diagc">📋 Скопировать</button><button id="diagx" class="sec">Закрыть</button></div></div>
@@ -222,14 +221,14 @@ const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.hivemq.com:8884
 function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);m.ts=Date.now();const js=JSON.stringify(m);const fast=dc&&dc.readyState==='open';if(fast)try{dc.send(js)}catch(_){}
   if((!fast&&m.k!=='hb')||m.k==='lsig')mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1,properties:{messageExpiryInterval:20}})})}
 let lastPeer=0,tickT=null;function ind(on){$('room').innerHTML='<i class="dot"></i>'+(on?'Да':'Нет');$('room').classList.toggle('ok',on)}
-function up(){if(ok)return;ok=true;ind(true);$('share').hidden=true;$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
+function up(){if(ok)return;ok=true;ind(true);$('share').hidden=true;if($('dlpick').hidden)$('setup').hidden=true;   /* напарник подключился — сразу в основное окно */$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
   if(host&&!tickT)tickT=setInterval(()=>{if(playing())send({k:'tick',t:T()})},10000)}
 /* связь живая? раз в 5 с «я тут»; 15 с тишины от напарника — «Нет» */
 setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-lastPeer>15000){ok=false;ind(false);sys('напарник пропал')}},3000);
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v18',DIAG=[];
+const VER='v19',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -278,8 +277,9 @@ $('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i
 $('share').onclick=async()=>{const c=$('code').textContent;if(!c)return;const url=location.origin+location.pathname+'#'+c,text='👥 Смотрим вдвоём\nКод комнаты: '+c;
   try{if(navigator.share){await navigator.share({title:'Вдвоём',text,url});return}}catch(e){if(e&&e.name==='AbortError')return}
   try{await navigator.clipboard.writeText(text+'\n'+url);toast('📋 Код скопирован — вставьте в чат')}catch(_){prompt('Скопируйте код и отправьте напарнику:',c)}};
-$('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false)};
-$('close').onclick=()=>{$('setup').hidden=true;unlock()};$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
+$('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false);$('setup').hidden=true;toast('Подключаюсь… лампочка «Да» — напарник на связи')};
+/* закрыть меню — касанием по затемнённой области над ним */
+$('setup').addEventListener('click',e=>{if(e.target===$('setup')){$('setup').hidden=true;unlock()}});$('diag').addEventListener('click',e=>{if(e.target===$('diag'))$('diagx').click()});$('menu').onclick=()=>$('setup').hidden=false;$('room').onclick=()=>$('setup').hidden=false;
 /* --- чат --- */
 const EMO=/^(\p{Extended_Pictographic}|️|‍|\s)+$/u;
 function feed(d,life){const L=$('log');L.appendChild(d);while(L.children.length>8||(L.children.length>1&&L.scrollHeight>L.clientHeight+2))L.firstChild.remove();
