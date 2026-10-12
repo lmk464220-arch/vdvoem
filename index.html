@@ -138,11 +138,12 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 15</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 16</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
  <p id="fname" style="color:var(--ok)"></p>
+ <button id="cast" hidden>📡 Показать это видео напарнику</button>
  <p>2. Комната: один создаёт и присылает код, второй входит по коду.</p>
  <button id="mk">Создать комнату</button>
  <div class="code" id="code"></div>
@@ -174,24 +175,26 @@ function fmt(t){t=Math.max(0,Math.floor(t||0));return (t>=3600?Math.floor(t/3600
  x.fillStyle='#e6e8ec';x.font='900 30px -apple-system';x.textAlign='center';x.fillText('ТА',90,168);$('appicon').href=c.toDataURL()}
 /* --- видео --- */
 let unlocked=false;
-function unlock(){lvUnlock();if(unlocked||!v.src)return;unlocked=true;const p=v.play();if(p)p.then(()=>v.pause()).catch(()=>{unlocked=false})}
-$('pick').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;v.src=URL.createObjectURL(f);v.load();$('fname').textContent='✓ '+f.name;try{localStorage.setItem('tox_fname',f.name)}catch(_){}unlock()});
+let shRecv=false,shPos={t:0,d:0};const T=()=>shRecv?shPos.t:v.currentTime,D=()=>shRecv?shPos.d:v.duration;
+function unlock(){lvUnlock();if(unlocked||!v.src||shRecv)return;unlocked=true;const p=v.play();if(p)p.then(()=>v.pause()).catch(()=>{unlocked=false})}
+$('pick').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;v.src=URL.createObjectURL(f);v.load();$('fname').textContent='✓ '+f.name;castUI();try{localStorage.setItem('tox_fname',f.name)}catch(_){}unlock()});
 v.addEventListener('loadedmetadata',()=>{$('dur').textContent=fmt(v.duration);try{const p=JSON.parse(localStorage.getItem('tox_pos')||'null');if(p&&p.t>30){v.currentTime=p.t;toast('↪ с '+fmt(p.t))}}catch(_){}});
 v.addEventListener('pause',()=>{$('vw').classList.add('paused');$('pp').textContent='▶ Пуск'});
 v.addEventListener('loadedmetadata',()=>{if(v.videoWidth)document.documentElement.style.setProperty('--ar',v.videoWidth+'/'+v.videoHeight)});
 v.addEventListener('play',()=>{$('vw').classList.remove('paused');$('pp').textContent='⏸ Пауза'});
-setInterval(()=>{if(v.duration){$('cur').textContent=fmt(v.currentTime);if(!sk.drag)$('sk').value=Math.round(1000*v.currentTime/v.duration);try{localStorage.setItem('tox_pos',JSON.stringify({t:v.currentTime}))}catch(_){}}},500);
-const sk=$('sk');sk.addEventListener('input',()=>{sk.drag=true;if(v.duration)$('cur').textContent=fmt(sk.value/1000*v.duration)});
-sk.addEventListener('change',()=>{sk.drag=false;if(!v.duration)return;v.currentTime=sk.value/1000*v.duration;send({k:'seek',t:v.currentTime})});
-function playPause(){if(!v.src){$('setup').hidden=false;return}unlock();
+setInterval(()=>{const d=D(),t=T();if(d&&isFinite(d)){$('cur').textContent=fmt(t);$('dur').textContent=fmt(d);if(!sk.drag)$('sk').value=Math.round(1000*t/d);if(!shRecv)try{localStorage.setItem('tox_pos',JSON.stringify({t}))}catch(_){}}},500);
+const sk=$('sk');sk.addEventListener('input',()=>{sk.drag=true;if(D())$('cur').textContent=fmt(sk.value/1000*D())});
+sk.addEventListener('change',()=>{sk.drag=false;const d=D();if(!d||!isFinite(d))return;const t=sk.value/1000*d;if(!shRecv)v.currentTime=t;else shPos.t=t;send({k:'seek',t})});
+function playPause(){if(!v.src&&!v.srcObject){$('setup').hidden=false;return}unlock();
+  if(shRecv){if(v.paused){v.play().catch(()=>{});send({k:'play',t:T()})}else{v.pause();send({k:'pause',t:T()})}return}
   if(v.paused){if(!started&&ok&&v.currentTime<1){send({k:'cd',t:v.currentTime});countdown(v.currentTime);return}v.play();send({k:'play',t:v.currentTime})}
   else{v.pause();send({k:'pause',t:v.currentTime})}}
 let started=false,cdOn=false;
 function countdown(t){if(cdOn)return;cdOn=true;started=true;if(t!=null&&Math.abs(v.currentTime-t)>0.3)v.currentTime=t;const e=$('cd');e.hidden=false;let n=3;e.textContent=n;
   const iv=setInterval(()=>{n--;if(n>0)e.textContent=n;else{clearInterval(iv);e.hidden=true;cdOn=false;v.play()}},1000)}
 $('pp').onclick=playPause;document.querySelector('.vpic').onclick=playPause;
-$('back').onclick=()=>{v.currentTime=Math.max(0,v.currentTime-10);send({k:'seek',t:v.currentTime})};
-$('fwd').onclick=()=>{v.currentTime=Math.min(v.duration||0,v.currentTime+10);send({k:'seek',t:v.currentTime})};
+function jump(dt){const t=Math.max(0,Math.min(D()||0,T()+dt));if(shRecv)shPos.t=t;else v.currentTime=t;send({k:'seek',t})}
+$('back').onclick=()=>jump(-10);$('fwd').onclick=()=>jump(10);
 /* фон — размытый кадр */
 {const ax=$('amb').getContext('2d');setInterval(()=>{if(!v.paused&&v.readyState>=2)try{ax.drawImage(v,0,0,32,18)}catch(_){}},300)}
 /* не гасить экран во время просмотра */
@@ -210,7 +213,7 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v15',DIAG=[];
+const VER='v16',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -243,15 +246,15 @@ function join(code,h){room='toxanton/room/'+code;host=h;joinH=h;opened=false;mqs
   try{localStorage.setItem('tox_room',JSON.stringify({code,h}))}catch(_){}}
 function recv(m){if(m.from===me)return;if(m.ts&&Date.now()-m.ts>60000)return;if(m.id){if(seen.has(m.id))return;seen.add(m.id)}lastPeer=Date.now();if(!ok&&m.k==='hb')up();if(m.from&&m.k!=='lsig')linkMaybe(m.from);
   if(m.k==='hello'){send({k:'hi'});up()}else if(m.k==='hi')up();
-  else if(m.k==='play'){if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;started=true;if(v.paused)v.play().catch(()=>toast('Нажмите ▶'));toast('▶ напарник')}
-  else if(m.k==='pause'){if(!v.paused)v.pause();if(Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;if(!m.auto)toast('⏸ напарник')}
-  else if(m.k==='seek'){v.currentTime=m.t;toast('↪ напарник')}
-  else if(m.k==='tick'){if(!v.paused&&Math.abs(v.currentTime-m.t)>0.5)v.currentTime=m.t}
+  else if(m.k==='play'){if(!shRecv&&Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;started=true;if(v.paused)v.play().catch(()=>toast('Нажмите ▶'));toast('▶ напарник')}
+  else if(m.k==='pause'){if(!v.paused)v.pause();if(!shRecv&&Math.abs(v.currentTime-m.t)>0.3)v.currentTime=m.t;if(!m.auto)toast('⏸ напарник')}
+  else if(m.k==='seek'){if(!shRecv)v.currentTime=m.t;toast('↪ напарник')}
+  else if(m.k==='tick'){if(!shRecv&&!v.paused&&Math.abs(v.currentTime-m.t)>0.5)v.currentTime=m.t}
   else if(m.k==='cd')countdown(m.t);
   else if(m.k==='chat'){add(m.txt,false);toast('💬 '+m.txt)}
   else if(m.k==='mark'){}
   else if(m.k==='pcm')pcmRecv(m);else if(m.k==='lv')lvRecv(m);else if(m.k==='vm')vmRecv(m);
-  else if(m.k==='sig')sigRecv(m);else if(m.k==='lsig')lsigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
+  else if(m.k==='sig')sigRecv(m);else if(m.k==='shsig')shSig(m);else if(m.k==='shpos'){shPos={t:m.t,d:m.d}}else if(m.k==='shoff')shRecvStop(true);else if(m.k==='shtake'){if(shSend){shSendStop(false);sys('📡 напарник показывает своё видео')}}else if(m.k==='lsig')lsigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
 $('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true);$('code').textContent=c;$('share').hidden=false;$('st').textContent='Ждём напарника…';$('st').style.color=''};
 /* «Отправить код напарнику»: системное меню iPhone — Telegram, WhatsApp, Сообщения и т.д.; если его нет — копируем */
 $('share').onclick=async()=>{const c=$('code').textContent;if(!c)return;const url=location.origin+location.pathname+'#'+c,text='👥 Смотрим вдвоём\nКод комнаты: '+c;
@@ -290,8 +293,8 @@ function lvPlayCtx(){if(!LVA.play){LVA.play=new (window.AudioContext||window.web
 function lvOut(){return LVA.boost||LVA.dest||LVA.play.destination}
 /* --- приглушение шоу, пока говорит напарник. Где громкость видео не меняется (iPhone) — через Web Audio --- */
 function lvVolOK(v){if(LVA.volok==null){const t=v.volume;try{v.volume=0.5}catch(_){}LVA.volok=Math.abs(v.volume-0.5)<0.01;try{v.volume=t}catch(_){}}return LVA.volok}
-function lvRoute(){const v=LIVE.video();if(!v||LVA.vgain||lvVolOK(v)||!LVA.play||LVA.play.state!=='running')return;
-  try{const c=LVA.play;LVA.vgain=c.createGain();c.createMediaElementSource(v).connect(LVA.vgain);LVA.vgain.connect(LVA.dest||c.destination)}catch(_){LVA.vgain=null;LVA.volok=true}}
+function lvRoute(force){const v=LIVE.video();if(!v||LVA.vgain||(!force&&lvVolOK(v))||!LVA.play||LVA.play.state!=='running')return;
+  try{const c=LVA.play;LVA.vgain=c.createGain();LVA.vsrc=c.createMediaElementSource(v);LVA.vsrc.connect(LVA.vgain);LVA.vgain.connect(LVA.dest||c.destination)}catch(_){LVA.vgain=null;LVA.volok=true}}
 function lvDuck(on){const v=LIVE.video();if(!v)return;const to=on?LIVE.duck:1;lvRoute();
   if(LVA.vgain){const g=LVA.vgain.gain,t=LVA.play.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(to,t+(on?0.15:0.6));return}
   clearInterval(LVA.duckT);const base=LVA.vbase!=null?LVA.vbase:(LVA.vbase=v.volume);const tgt=base*to;
@@ -503,6 +506,39 @@ async function linkStart(initiator,offer,offerId){linkClose();const p=link=new R
   try{if(initiator){await p.setLocalDescription(await p.createOffer());await waitIceL(p);if(link===p)lsigSend('moffer',p.localDescription)}
     else{const tpl=(await p.createOffer()).sdp;await p.setRemoteDescription({type:'offer',sdp:sdpBuild(tpl,offer)});await p.setLocalDescription(await p.createAnswer());await waitIceL(p);if(link===p)lsigSend('manswer',p.localDescription,offerId)}}
   catch(e){dlog('ошибка звонка: '+(e&&e.message||e));if(link===p)linkClose()}}
+/* ===== трансляция: показываю своё видео напарнику (картинка + звук напрямую, без серверов) =====
+   Картинка рисуется на холсте и уходит как видеопоток; звук шоу берётся из того же узла, что и для своих динамиков.
+   У напарника поток показывается вместо его видео; пауза и перемотка с его стороны управляют моим видео. */
+let spc=null,shSend=false,shCanvas=null,shDraw=null,shPosT=null,shPrevSrc='';
+function castUI(){const b=$('cast');b.hidden=!(shRecv?shPrevSrc:v.src);b.textContent=shSend?'⏹ Остановить показ':shRecv?'📡 Показать вместо этого моё видео':'📡 Показать это видео напарнику'}
+v.addEventListener('loadedmetadata',castUI);
+/* показывать может любой из двоих: если сейчас показывает напарник — забираем показ себе */
+$('cast').onclick=()=>{if(shSend)return shSendStop(true);if(shRecv){send({k:'shtake'});shRecvStop(false);v.addEventListener('loadeddata',()=>shSendStart(),{once:true});return}shSendStart()};
+async function shSendStart(){if(!(dc&&dc.readyState==='open')){toast('Сначала дождитесь «🎧 голосовая связь включена»');return}
+  lvUnlock();await new Promise(r=>setTimeout(r,200));
+  const W0=v.videoWidth||1280,H0=v.videoHeight||720,k=Math.min(1,960/W0);shCanvas=document.createElement('canvas');shCanvas.width=Math.round(W0*k/2)*2;shCanvas.height=Math.round(H0*k/2)*2;
+  const cx=shCanvas.getContext('2d');cx.fillStyle='#000';cx.fillRect(0,0,shCanvas.width,shCanvas.height);
+  shDraw=setInterval(()=>{if(v.readyState>=2)try{cx.drawImage(v,0,0,shCanvas.width,shCanvas.height)}catch(_){}},40);
+  const ms=shCanvas.captureStream(25);
+  try{lvRoute(true);if(LVA.vsrc){LVA.shDest=LVA.shDest||LVA.play.createMediaStreamDestination();LVA.vsrc.connect(LVA.shDest);LVA.shDest.stream.getAudioTracks().forEach(t=>ms.addTrack(t))}}catch(e){dlog('звук шоу для показа: '+(e&&e.message||e))}
+  spc=new RTCPeerConnection({iceServers:ICE});ms.getTracks().forEach(t=>{const sn=spc.addTrack(t,ms);
+    if(t.kind==='video')try{const pr=sn.getParameters();pr.encodings=pr.encodings&&pr.encodings.length?pr.encodings:[{}];pr.encodings[0].maxBitrate=1500000;sn.setParameters(pr).catch(()=>{})}catch(_){}});
+  spc.onconnectionstatechange=()=>{dlog('показ: '+(spc&&spc.connectionState));if(spc&&spc.connectionState==='failed'){shSendStop(true);toast('Показ прервался')}};
+  shSend=true;castUI();$('setup').hidden=true;sys('📡 показываю видео напарнику');
+  shPosT=setInterval(()=>send({k:'shpos',t:v.currentTime,d:v.duration}),1000);
+  await spc.setLocalDescription(await spc.createOffer());await waitIceL(spc);if(spc)send({k:'shsig',type:'offer',d:JSON.stringify(spc.localDescription)})}
+function shSendStop(tell){clearInterval(shDraw);clearInterval(shPosT);if(spc){spc.close();spc=null}try{if(LVA.vsrc&&LVA.shDest)LVA.vsrc.disconnect(LVA.shDest)}catch(_){}
+  if(shSend&&tell){send({k:'shoff'});sys('показ остановлен')}shSend=false;castUI()}
+async function shSig(m){const desc=JSON.parse(m.d);
+  if(m.type==='answer'){if(spc&&spc.signalingState==='have-local-offer')await spc.setRemoteDescription(desc);return}
+  shRecvStop(false);spc=new RTCPeerConnection({iceServers:ICE});
+  spc.ontrack=e=>{const st=e.streams[0]||new MediaStream([e.track]);if(!shRecv){shRecv=true;shPrevSrc=v.src;if(!v.paused)v.pause()}
+    if(v.srcObject!==st){v.srcObject=st;v.muted=false;v.play().catch(()=>toast('Нажмите ▶, чтобы смотреть показ'))}castUI()};
+  spc.onconnectionstatechange=()=>{dlog('показ: '+(spc&&spc.connectionState))};
+  sys('📡 напарник показывает своё видео');await spc.setRemoteDescription(desc);await spc.setLocalDescription(await spc.createAnswer());await waitIceL(spc);
+  if(spc)send({k:'shsig',type:'answer',d:JSON.stringify(spc.localDescription)})}
+function shRecvStop(note){if(spc&&!shSend){spc.close();spc=null}if(!shRecv)return;shRecv=false;v.srcObject=null;
+  if(shPrevSrc){v.src=shPrevSrc;v.load()}else v.removeAttribute('src');if(note)sys('напарник закончил показ');castUI()}
 /* старт: сразу показать настройку; вспомнить последнюю комнату */
 try{const r=JSON.parse(localStorage.getItem('tox_room')||'null');if(r){$('cin').value=r.code}}catch(_){}
 /* открыли по ссылке с кодом — код уже подставлен, остаётся нажать «Войти по коду» */
