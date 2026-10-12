@@ -112,7 +112,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 </div>
 <audio id="raud" autoplay playsinline></audio>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 4</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 5</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -171,18 +171,18 @@ $('fwd').onclick=()=>{v.currentTime=Math.min(v.duration||0,v.currentTime+10);sen
 let wl=null;async function wake(){try{if('wakeLock' in navigator&&!wl)wl=await navigator.wakeLock.request('screen');wl&&wl.addEventListener('release',()=>wl=null)}catch(_){}}
 v.addEventListener('play',wake);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!v.paused)wake()});
 /* --- связь: те же комнаты, что у плеера на Mac (MQTT, два брокера) --- */
-const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
+const BROKERS=['wss://broker.hivemq.com:8884/mqtt','wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt','wss://mqtt.eclipseprojects.io:443/mqtt'];let mqs=[],room='',host=false,ok=false,n=0;const seen=new Set();
 function send(m){if(!room)return;m.from=me;m.id=me+'-'+(++n);const js=JSON.stringify(m);const fast=dc&&dc.readyState==='open';if(fast)try{dc.send(js)}catch(_){}
   if(!fast||m.k==='hb'||m.k==='lsig')mqs.forEach(c=>{if(c.connected)c.publish(room,js,{qos:1})})}
 let lastPeer=0,tickT=null;function ind(on){$('room').innerHTML='<i class="dot"></i>'+(on?'Да':'Нет');$('room').classList.toggle('ok',on)}
 function up(){if(ok)return;ok=true;ind(true);$('st').textContent='Подключено ✓';$('st').style.color='var(--ok)';sys('напарник на связи');
   if(host&&!tickT)tickT=setInterval(()=>{if(!v.paused)send({k:'tick',t:v.currentTime})},10000)}
 /* связь живая? раз в 5 с «я тут»; 15 с тишины от напарника — «Нет» */
-setInterval(()=>{if(!room)return;send({k:'hb'});if(ok&&Date.now()-lastPeer>15000){ok=false;ind(false);sys('напарник пропал')}},3000);
+setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-lastPeer>15000){ok=false;ind(false);sys('напарник пропал')}},3000);
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v4',DIAG=[];
+const VER='v5',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -387,18 +387,35 @@ function linkClose(){clearTimeout(linkDropT);if(dc){try{dc.close()}catch(_){}dc=
 function linkMaybe(from){if(from!==peerId){peerId=from;linkClose();linkFails=0}
   if(link||!window.RTCPeerConnection||me>peerId||linkFails>=6||Date.now()-linkTry<8000)return;linkTry=Date.now();linkFails++;linkStart(true)}
 /* сообщения через посредника могут теряться — «рукопожатие» звонка повторяем каждые 3 с, пока звонок не соединится */
+/* «рукопожатие» ужато до ~300 символов (без VPN большие сообщения через посредника не проходят):
+   шлём только ключи и адреса, а полное описание собеседник собирает сам по своему же шаблону */
+function fpPack(f){const [a,h]=f.split(' ');return a+' '+btoa(String.fromCharCode(...h.split(':').map(x=>parseInt(x,16))))}
+function fpUnpack(f){const [a,b]=f.split(' ');return a+' '+[...atob(b)].map(c=>c.charCodeAt(0).toString(16).toUpperCase().padStart(2,'0')).join(':')}
+function sdpMini(sdp){const g=re=>(sdp.match(re)||[])[1]||'';const cs=[],seen={};
+  (sdp.match(/a=candidate:.*/g)||[]).forEach(l=>{const w=l.split(' ');const ty=w[w.indexOf('typ')+1];
+    if(w[1]!=='1'||w[2].toLowerCase()!=='udp'||!/^(host|srflx|relay)$/.test(ty))return;const k=w[4]+':'+w[5];if(seen[k])return;seen[k]=1;
+    cs.push(ty[0]+','+w[4]+','+w[5]+','+w[3])});
+  const pick=t=>cs.filter(c=>c[0]===t);
+  return [g(/a=ice-ufrag:(\S+)/),g(/a=ice-pwd:(\S+)/),fpPack(g(/a=fingerprint:(\S+ \S+)/)),g(/a=setup:(\w+)/),[...pick('s').slice(0,2),...pick('r').slice(0,1),...(pick('s').length?[]:pick('h').slice(0,1))].join(';')].join('|')}
+function sdpBuild(tpl,mini){const [u,pw,fp,setup,cl]=mini.split('|');const T={h:'host',s:'srflx',r:'relay'};
+  const cands=(cl?cl.split(';'):[]).map((c,i)=>{const [t,ip,port,pr]=c.split(',');return 'a=candidate:'+(i+1)+' 1 udp '+pr+' '+ip+' '+port+' typ '+T[t]+(t==='h'?'':' raddr 0.0.0.0 rport 0')});
+  const extra=['a=ice-ufrag:'+u,'a=ice-pwd:'+pw,'a=fingerprint:'+fpUnpack(fp),'a=setup:'+setup,...cands];
+  const out=[];let inM=false;
+  tpl.split(/\r?\n/).forEach(l=>{if(!l||/^a=(candidate|end-of-candidates|msid:|ssrc|ice-ufrag|ice-pwd|fingerprint|setup)/.test(l))return;
+    out.push(l);if(l.startsWith('m='))inM=true;else if(inM&&l.startsWith('c=')){out.push(...extra);inM=false}});
+  return out.join('\r\n')+'\r\n'}
+function miniTypes(mini){const ty={};(mini.split('|')[4]||'').split(';').forEach(c=>{if(c){const t={h:'host',s:'srflx',r:'relay'}[c[0]];ty[t]=(ty[t]||0)+1}});return JSON.stringify(ty).replace(/["{}]/g,'')||'нет'}
 let sigOut=null;const lsigDone={};
-async function lsigSend(type,desc,re){const d=await zip(JSON.stringify(desc)),id=Math.random().toString(36).slice(2,7),k=Math.ceil(d.length/1200),ch=[];
-  for(let i=0;i<k;i++)ch.push({k:'lsig',type,id,i,n:k,to:peerId,re:re||'',d:d.slice(i*1200,(i+1)*1200)});
-  sigOut={ch,link,re:re||'',t:0,type};dlog('→ отправляю '+type+' ('+k+' ч.)');sigPush()}
+function lsigSend(type,desc,re){const d=sdpMini(desc.sdp),id=Math.random().toString(36).slice(2,7);
+  const mm={k:'lsig',type,id,to:peerId,d};if(re)mm.re=re;sigOut={ch:[mm],link,re:re||'',t:0,type};dlog('→ отправляю '+type+' ('+d.length+' симв.; мои адреса: '+miniTypes(d)+')');sigPush()}
 function sigPush(){if(!sigOut)return;if(sigOut.t)dlog('→ повтор '+sigOut.type);sigOut.t=Date.now();sigOut.ch.forEach(m=>send(Object.assign({},m)))}
 setInterval(()=>{if(!sigOut)return;if(!link||link!==sigOut.link||link.connectionState==='connected'){sigOut=null;return}sigPush()},3000);
-const lsigBuf={};async function lsigRecv(m){if(m.to&&m.to!==me)return;
-  if(lsigDone[m.id]){if(m.type==='offer'&&sigOut&&sigOut.re===m.id&&Date.now()-sigOut.t>1500)sigPush();return}
-  const b=lsigBuf[m.id]=lsigBuf[m.id]||[];b[m.i]=m.d;if(b.filter(x=>x).length<m.n)return;delete lsigBuf[m.id];lsigDone[m.id]=1;
-  const desc=JSON.parse(await unzip(b.join('')));{const ty={};(desc.sdp.match(/typ \w+/g)||[]).forEach(x=>{x=x.slice(4);ty[x]=(ty[x]||0)+1});dlog('получен '+m.type+' целиком; адреса напарника: '+(JSON.stringify(ty).replace(/["{}]/g,'')||'нет'))}
-  if(m.type==='offer'){if(m.from!==peerId){peerId=m.from;linkFails=0}await linkStart(false,desc,m.id)}
-  else if(m.type==='answer'&&link&&link.signalingState==='have-local-offer')await link.setRemoteDescription(desc)}
+async function lsigRecv(m){if(m.to&&m.to!==me)return;
+  if(lsigDone[m.id]){if(m.type==='moffer'&&sigOut&&sigOut.re===m.id&&Date.now()-sigOut.t>1500)sigPush();return}
+  if(m.type!=='moffer'&&m.type!=='manswer')return;lsigDone[m.id]=1;dlog('получен '+m.type+'; адреса напарника: '+miniTypes(m.d));
+  try{if(m.type==='moffer'){if(m.from!==peerId){peerId=m.from;linkFails=0}await linkStart(false,m.d,m.id)}
+    else if(link&&link.signalingState==='have-local-offer')await link.setRemoteDescription({type:'answer',sdp:sdpBuild(link.localDescription.sdp,m.d)})}
+  catch(e){dlog('ошибка рукопожатия: '+(e&&e.message||e))}}
 function waitIceL(p){return new Promise(r=>{if(p.iceGatheringState==='complete')return r();const t=setTimeout(r,3000);p.addEventListener('icegatheringstatechange',()=>{if(p.iceGatheringState==='complete'){clearTimeout(t);r()}})})}
 async function linkStart(initiator,offer,offerId){linkClose();const p=link=new RTCPeerConnection({iceServers:ICE});
   dc=p.createDataChannel('d',{negotiated:true,id:0});dc.onmessage=e=>{try{recv(JSON.parse(e.data))}catch(_){}};
@@ -417,9 +434,9 @@ async function linkStart(initiator,offer,offerId){linkClose();const p=link=new R
     else if(s==='failed'){linkClose();sys('голосовая связь не соединилась — работает рация')}
     else if(s==='disconnected'){clearTimeout(linkDropT);linkDropT=setTimeout(()=>{if(link===p&&p.connectionState!=='connected'){linkClose();sys('голосовая связь прервалась…')}},6000)}
     micUI()};
-  try{if(initiator){await p.setLocalDescription(await p.createOffer());await waitIceL(p);if(link===p)lsigSend('offer',p.localDescription)}
-    else{await p.setRemoteDescription(offer);await p.setLocalDescription(await p.createAnswer());await waitIceL(p);if(link===p)lsigSend('answer',p.localDescription,offerId)}}
-  catch(_){if(link===p)linkClose()}}
+  try{if(initiator){await p.setLocalDescription(await p.createOffer());await waitIceL(p);if(link===p)lsigSend('moffer',p.localDescription)}
+    else{const tpl=(await p.createOffer()).sdp;await p.setRemoteDescription({type:'offer',sdp:sdpBuild(tpl,offer)});await p.setLocalDescription(await p.createAnswer());await waitIceL(p);if(link===p)lsigSend('manswer',p.localDescription,offerId)}}
+  catch(e){dlog('ошибка звонка: '+(e&&e.message||e));if(link===p)linkClose()}}
 /* старт: сразу показать настройку; вспомнить последнюю комнату */
 try{const r=JSON.parse(localStorage.getItem('tox_room')||'null');if(r){$('cin').value=r.code}}catch(_){}
 </script></body></html>
