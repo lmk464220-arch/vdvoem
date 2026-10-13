@@ -77,7 +77,8 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .sbox button.sec{background:#2a2a30}
 .sbox [hidden]{display:none!important}
 #dlpick{background:linear-gradient(180deg,rgba(62,207,110,.55),rgba(62,207,110,.3));border-color:rgba(62,207,110,.7)}
-#share{background:linear-gradient(180deg,rgba(62,207,110,.55),rgba(62,207,110,.3));border-color:rgba(62,207,110,.7)}
+#share[hidden]{display:none!important}
+#share button{background:linear-gradient(180deg,rgba(62,207,110,.55),rgba(62,207,110,.3));border-color:rgba(62,207,110,.7)}
 .sbox input{width:100%;font:700 26px ui-monospace,Menlo,monospace;text-align:center;padding:12px;border-radius:14px;border:0;margin:6px 0}
 .code{font:800 48px ui-monospace,Menlo,monospace;letter-spacing:6px;color:var(--ok);text-align:center;margin:8px 0}
 .st{min-height:20px;font-size:15px;color:var(--warn)}
@@ -141,24 +142,23 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox">
- <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 23</span></h2>
+ <h2>👥 Смотрим вдвоём <span style="font-size:14px;color:var(--muted);font-weight:500">версия 25</span></h2>
  <div class="inst" id="inst" hidden></div>
  <p>1. Выберите файл выпуска (show_cut.mp4) — его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</p>
  <label class="btn" id="pickl">🎬 Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
  <p id="fname" style="color:var(--ok)"></p>
  <button id="cast" hidden>📡 Показать это видео напарнику</button>
  <div id="dlbox" style="margin:10px 0 4px;padding:10px;border-radius:14px;background:rgba(255,255,255,.06)">
-  <p style="margin:0 0 6px">⤓ Скачать с YouTube и показать напарнику</p>
+  <p style="margin:0 0 6px">▶️ Видео с YouTube</p>
   <input id="dlurl" placeholder="вставьте ссылку YouTube" autocapitalize="off" autocomplete="off" style="font:16px -apple-system,system-ui,sans-serif;text-align:left;padding:10px 12px;margin:0 0 6px">
-  <button id="dlgo">⤓ Скачать и показать</button>
+  <div style="display:flex;gap:8px"><button id="ytb" style="flex:1;margin:0;font-size:16px">▶️ Смотреть на YouTube</button><button id="dlgo" style="flex:1;margin:0;font-size:16px">⤓ Скачать и показать</button></div>
   <button id="dlpick" hidden>🎬 Выбрать скачанное видео (vdvoem.mp4)</button>
  </div>
- <button id="ytb">▶️ YouTube по ссылке</button>
  <button id="ytx" class="sec" hidden>✕ Закрыть YouTube</button>
  <p>2. Комната: один создаёт и присылает код, второй входит по коду.</p>
  <button id="mk">Создать комнату</button>
  <div class="code" id="code"></div>
- <button id="share" hidden>📤 Отправить код напарнику</button>
+ <div id="share" hidden style="display:flex;gap:8px"><button id="shareCode" style="flex:1;margin:8px 0">🔢 Только код</button><button id="shareLink" style="flex:1;margin:8px 0">🔗 Ссылка</button></div>
  <input id="cin" placeholder="код" autocapitalize="off" autocomplete="off" maxlength="6">
  <button id="join" class="sec">Войти по коду</button>
  <div class="st" id="st"></div>
@@ -230,7 +230,7 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v23',DIAG=[];
+const VER='v25',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -276,7 +276,11 @@ function recv(m){if(m.from===me)return;if(m.ts&&Date.now()-m.ts>60000)return;if(
   else if(m.k==='sig')sigRecv(m);else if(m.k==='shsig')shSig(m);else if(m.k==='shpos'){shPos={t:m.t,d:m.d}}else if(m.k==='shoff')shRecvStop(true);else if(m.k==='shtake'){if(shSend){shSendStop(false);sys('📡 напарник показывает своё видео')}}else if(m.k==='lsig')lsigRecv(m);else if(m.k==='camoff'){camStop(false);toast('📹 напарник выключил камеру')}}
 $('mk').onclick=()=>{const a='abcdefghkmnpqrstuvwxyz23456789';let c='';for(let i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];unlock();join(c,true);$('code').textContent=c;$('share').hidden=false;$('st').textContent='Ждём напарника…';$('st').style.color=''};
 /* «Отправить код напарнику»: системное меню iPhone — Telegram, WhatsApp, Сообщения и т.д.; если его нет — копируем */
-$('share').onclick=async()=>{const c=$('code').textContent;if(!c)return;const url=location.origin+location.pathname+'#'+c,text='👥 Смотрим вдвоём\nКод комнаты: '+c;
+/* две кнопки: «Только код» — один код без слов; «Ссылка» — как раньше, с текстом и ссылкой */
+$('shareCode').onclick=async()=>{const c=$('code').textContent;if(!c)return;
+  try{if(navigator.share){await navigator.share({text:c});return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(c);toast('📋 Код скопирован')}catch(_){prompt('Код комнаты:',c)}};
+$('shareLink').onclick=async()=>{const c=$('code').textContent;if(!c)return;const url=location.origin+location.pathname+'#'+c,text='👥 Смотрим вдвоём\nКод комнаты: '+c;
   try{if(navigator.share){await navigator.share({title:'Вдвоём',text,url});return}}catch(e){if(e&&e.name==='AbortError')return}
   try{await navigator.clipboard.writeText(text+'\n'+url);toast('📋 Код скопирован — вставьте в чат')}catch(_){prompt('Скопируйте код и отправьте напарнику:',c)}};
 $('join').onclick=()=>{const c=$('cin').value.trim().toLowerCase();if(!/^[a-z0-9]{6}$/.test(c)){$('st').textContent='Код — 6 символов';return}unlock();join(c,false);$('setup').hidden=true;toast('Подключаюсь… лампочка «Да» — напарник на связи')};
@@ -571,7 +575,7 @@ let ytApiP=null,ytQ=0,ytLast={t:0,at:0};
 function ytQuiet(){ytQ=Date.now()+1500}          /* наши собственные команды не пересылаем обратно */
 function ytApi(){return ytApiP=ytApiP||new Promise((res,rej)=>{if(window.YT&&YT.Player)return res();window.onYouTubeIframeAPIReady=()=>res();
   const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';sc.onerror=()=>{ytApiP=null;rej()};document.head.appendChild(sc);setTimeout(()=>{if(!(window.YT&&YT.Player)){ytApiP=null;rej()}},20000)})}
-$('ytb').onclick=()=>{const u=prompt('Вставьте ссылку на видео YouTube:');if(u==null)return;const id=ytId(u);if(!id){toast('Не похоже на ссылку YouTube');return}$('setup').hidden=true;ytOpen(id,true)};
+$('ytb').onclick=()=>{const id=ytId($('dlurl').value);if(!id){toast('Вставьте ссылку на видео YouTube');$('dlurl').focus();return}$('setup').hidden=true;ytOpen(id,true)};
 $('ytx').onclick=()=>{ytClose(true);$('setup').hidden=true};
 async function ytOpen(id,mine){if(shSend)shSendStop(true);if(shRecv)shRecvStop(false);
   try{await ytApi()}catch(_){toast('YouTube не открывается — нужен VPN');sys('YouTube не загрузился (без VPN он у вас заблокирован)');return}
