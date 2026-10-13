@@ -254,7 +254,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox"><div class="grab"></div>
- <div class="hd"><span class="hico"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="8" r="3.6"/><circle cx="16.5" cy="8.6" r="3"/><path d="M1.5 19.5c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2v.5h-13z"/><path d="M15.2 20v-.5c0-2.1-.8-3.9-2.1-5.2.9-.5 2-.8 3.4-.8 3.1 0 5.5 2.2 5.5 5.3v1.2z"/></svg></span><div class="htx"><h2>Смотрим вдвоём</h2><span class="ver">версия 41</span></div><button id="diagb" class="round" title="Диагностика связи"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+ <div class="hd"><span class="hico"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="8" r="3.6"/><circle cx="16.5" cy="8.6" r="3"/><path d="M1.5 19.5c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2v.5h-13z"/><path d="M15.2 20v-.5c0-2.1-.8-3.9-2.1-5.2.9-.5 2-.8 3.4-.8 3.1 0 5.5 2.2 5.5 5.3v1.2z"/></svg></span><div class="htx"><h2>Смотрим вдвоём</h2><span class="ver">версия 42</span></div><button id="diagb" class="round" title="Диагностика связи"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
  <div class="inst" id="inst" hidden></div>
  <div id="ringbox" class="card ring" hidden><span class="av" id="ringav"></span><span class="ctx"><b id="ringt"></b><small>зовёт смотреть вместе</small></span><button id="ringgo" class="grn">Подключиться</button></div>
  <label class="card row" for="pick"><span class="tile"><svg viewBox="0 0 24 24"><defs><linearGradient id="gbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3f4d"/><stop offset="1" stop-color="#15171d"/></linearGradient><linearGradient id="gc1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffc24a"/><stop offset="1" stop-color="#ff7a2f"/></linearGradient><linearGradient id="gc2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7aa8"/><stop offset="1" stop-color="#e8336f"/></linearGradient><linearGradient id="gc3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9d8cff"/><stop offset="1" stop-color="#5a3fe0"/></linearGradient><linearGradient id="ggl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect x=".5" y=".5" width="23" height="23" rx="6" fill="url(#gbg)" stroke="rgba(255,255,255,.25)" stroke-width=".6"/><g transform="translate(1.2 0) scale(.94)" style="transform-origin:12px 13px"><g transform="rotate(-24 10 15)"><rect x="3.2" y="6.5" width="10" height="11.5" rx="2" fill="url(#gc1)"/></g><g transform="rotate(-6 12 15)"><rect x="6" y="5.8" width="10" height="11.5" rx="2" fill="url(#gc2)"/></g><g transform="rotate(14 14 15)"><rect x="9.6" y="6.6" width="10" height="11.5" rx="2" fill="url(#gc3)" stroke="#fff" stroke-width=".9"/><circle cx="16.6" cy="9.8" r="1.2" fill="#fff"/><path d="M10.6 16.5l2.8-3.4 1.9 2.2 1.3-1.3 2.4 2.5z" fill="#fff"/></g></g><path d="M2 7.5C2 3.5 3.5 2 7.5 2h9C20.5 2 22 3.5 22 7.5v.5C15 10 8 10 2 8z" fill="url(#ggl)"/></svg></span><span class="ctx"><b>Выберите файл выпуска</b><small>Его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</small></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span></label>
@@ -343,7 +343,7 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v41',DIAG=[];
+const VER='v42',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -832,8 +832,19 @@ async function pushDisable(){const b=$('pushon');if(b.classList.contains('busy')
   try{await lim(Promise.all([fetch(PUSH+'/sub',{method:'POST',body:JSON.stringify({did:did(),codes:[],sub:sub.toJSON()})}),sub.unsubscribe()]),4000)}catch(_){}
   dlog('push: выключены');b.classList.remove('busy');pushUI();toast('🔕 Уведомления выключены')}
 $('pushon').onclick=pushEnable;
-async function pushRing(code){try{const r=await fetch(PUSH+'/ring',{method:'POST',body:JSON.stringify({code,did:did(),name:myName()})});const j=await r.json();
-  dlog('push: позвали, доставлено '+j.sent+' из '+j.targets);if(j.sent)toast('🔔 Напарнику отправлено уведомление')}catch(_){}}
+/* позвать: если сервер недоступен — пробуем снова каждые 8 с до 3 минут, пока не дойдёт или напарник не подключится сам */
+let ringTry=null;
+async function pushRing(code){clearTimeout(ringTry);const t0=Date.now();let n=0;
+  const attempt=async()=>{if(ok&&curCode()===code){dlog('push: напарник уже на связи');return}
+    if(curCode()!==code||Date.now()-t0>180000){dlog('push: так и не достучался до сервера');toast('Не удалось отправить уведомление — сервер недоступен');return}
+    n++;const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
+    try{const r=await fetch(PUSH+'/ring',{method:'POST',body:JSON.stringify({code,did:did(),name:myName()}),signal:ac.signal});clearTimeout(to);const j=await r.json().catch(()=>({}));
+      if(r.status===429){dlog('push: уже звали только что');return}
+      dlog('push: позвали (попытка '+n+'), доставлено '+j.sent+' из '+j.targets);
+      if(j.sent)toast('🔔 Напарнику отправлено уведомление');else if(j.targets===0)toast('У напарника не включены уведомления');return}
+    catch(e){clearTimeout(to);dlog('push: сервер не ответил (попытка '+n+')');if(n===1)toast('Сервер не отвечает — пробую ещё…')}
+    ringTry=setTimeout(attempt,8000)};
+  attempt()}
 /* при запуске: уже подписаны? обновить список комнат на сервере */
 let pushOff=false;try{pushOff=localStorage.getItem('vd_push_off')==='1'}catch(_){}
 if(pushCan()&&Notification.permission==='granted'&&!pushOff)navigator.serviceWorker.register('sw.js').then(r=>r.pushManager.getSubscription()).then(s=>{pushSub=s;pushUI();pushSync()}).catch(()=>{});
