@@ -164,6 +164,54 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 .sbox .hico{width:40px;height:40px}
 .sbox .two button{gap:9px;padding:12px 8px;font-size:15px}
 .sbox .two .ic.big{width:28px;height:28px}
+
+/* ===== v28: жидкое стекло ===== */
+.sheet{background:radial-gradient(60% 45% at 15% 30%,rgba(80,120,255,.35),transparent 70%),radial-gradient(55% 40% at 90% 55%,rgba(170,80,255,.28),transparent 70%),radial-gradient(60% 40% at 40% 95%,rgba(40,200,150,.22),transparent 70%),rgba(4,6,12,.45)}
+.sbox{background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.06) 30%,rgba(255,255,255,.03) 60%,rgba(255,255,255,.10));
+ -webkit-backdrop-filter:blur(34px) saturate(190%);backdrop-filter:blur(34px) saturate(190%);
+ border:1px solid rgba(255,255,255,.22);border-bottom:0;border-radius:30px 30px 0 0;
+ box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5),inset 1px 0 0 rgba(255,255,255,.12),inset -1px 0 0 rgba(255,255,255,.08),0 -24px 60px rgba(0,0,0,.45)}
+.sbox .card{background:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.sbox .tile,.sbox button.round{background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.sbox button,.sbox label.btn,.sbox #share #shareLink{background:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px rgba(0,0,0,.18)}
+.sbox button.grn,.sbox #dlpick{background:linear-gradient(180deg,rgba(62,207,110,.45),rgba(30,140,80,.25));border-color:rgba(110,230,150,.55);box-shadow:inset 0 1px 0 rgba(200,255,220,.4)}
+.sbox button.cp{background:transparent;border:0;box-shadow:none}
+.sbox .fld{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.16)}
+.sbox #joinbox input{background:rgba(0,0,0,.2);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:18px}
+.sbox #joinbox input::placeholder{color:rgba(255,255,255,.4)}
+.sbox .codewrap{background:rgba(62,207,110,.12);box-shadow:inset 0 1px 0 rgba(200,255,220,.25)}
+.sbox .step .n{background:rgba(91,156,240,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.grab{background:rgba(255,255,255,.5)}
+.sbox .logbox{background:rgba(0,0,0,.28);color:#d8dde6}
+.sbox .two button.ib{justify-content:center}
+#diag .sbox .two{margin-top:8px}
+/* основной экран в том же стиле */
+.pill,.ctl button,.inp{background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.05) 45%,rgba(255,255,255,.10));-webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 20px rgba(0,0,0,.3);color:#fff}
+.pill{padding:8px 14px}
+.pill.gi{width:42px;height:42px;padding:10px;display:inline-flex;align-items:center;justify-content:center}.pill.gi svg{width:100%;height:100%}
+#camb.ok{background:linear-gradient(180deg,rgba(62,207,110,.5),rgba(30,140,80,.3));border-color:rgba(110,230,150,.6)}
+.ctl button{border-radius:20px;padding:10px 14px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.ctl button svg{width:22px;height:22px;flex:0 0 auto}.ctl button i{font-style:normal}
+.ri{position:relative;display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center}.ri svg{position:absolute;inset:0;width:100%!important;height:100%!important}.ri i{font-size:11px;font-weight:700;margin-top:2px}
+.ctl .sk{padding:6px 10px}
+.ctl #pp{background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.12));border:1px solid rgba(255,255,255,.4);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),0 6px 20px rgba(0,0,0,.3)}
+.inp button{display:inline-flex;align-items:center;justify-content:center;padding:9px;background:linear-gradient(160deg,rgba(255,255,255,.2),rgba(255,255,255,.06));box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.inp button svg{width:100%;height:100%}
+.inp #send{background:linear-gradient(180deg,#5b9cf0,#3a6fd0);border-color:rgba(160,200,255,.6)}
+#ptt.live{background:linear-gradient(180deg,rgba(62,207,110,.6),rgba(30,140,80,.4));border-color:rgba(110,230,150,.8)}#ptt.mut{background:linear-gradient(180deg,rgba(255,90,90,.55),rgba(170,30,30,.4));border-color:rgba(255,140,140,.7)}
+.seek input{accent-color:#5b9cf0}
+.cams button{background:linear-gradient(160deg,rgba(255,255,255,.25),rgba(255,255,255,.08));-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3)}
+@media (orientation:landscape){
+ #room,#camb,#menu,.ctl button,.ctl #pp,.inp,.seek{background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(0,0,0,.25) 50%,rgba(255,255,255,.08));-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%);border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+ #camb.ok{background:linear-gradient(180deg,rgba(62,207,110,.5),rgba(30,140,80,.3))}
+ #camb,#menu{width:40px;height:40px;padding:9px}
+ #camb{right:calc(var(--ir,10px) + 48px)}
+ .ctl button,.ctl #pp{width:56px;height:56px;padding:0;border-radius:18px;flex-direction:column;gap:2px}
+ .ctl #pp i{display:none}.ctl #pp svg{width:24px;height:24px}
+ .inp button{width:36px;height:36px;padding:8px}
+ .inp #send{background:linear-gradient(180deg,#5b9cf0,#3a6fd0)}
+ #ptt.live{background:linear-gradient(180deg,rgba(62,207,110,.6),rgba(30,140,80,.4))}#ptt.mut{background:linear-gradient(180deg,rgba(255,90,90,.55),rgba(170,30,30,.4))}
+}
 </style></head><body>
 <canvas id="amb" width="32" height="18"></canvas>
 <div class="app">
@@ -171,11 +219,11 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
   <div class="ovl" id="log"></div></div>
   <div class="cams" id="cams" hidden><div class="tile"><video id="rcam" autoplay playsinline muted></video><span id="camst">соединяю…</span></div><div class="tile me" id="ltile"><video id="lcam" autoplay playsinline muted></video></div><button id="camx">✕</button></div></div>
  <div class="side">
-  <div class="top"><span class="pill" id="room"><i class="dot"></i>Нет</span><span class="sp"></span><button class="pill" id="camb" style="color:#fff">📹</button><button class="pill" id="menu" style="color:#fff">⋯</button></div>
-  <div class="ctl"><button id="back">↺ 10</button><button id="pp">▶ Пуск</button><button id="fwd">10 ↻</button></div>
+  <div class="top"><span class="pill" id="room"><i class="dot"></i>Нет</span><span class="sp"></span><button class="pill gi" id="camb" title="Камеры"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg></button><button class="pill gi" id="menu" title="Меню"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+  <div class="ctl"><button id="back" class="sk"><span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 108-8H8"/><path d="M10.5 1.5L8 4l2.5 2.5"/></svg><i>10</i></span></button><button id="pp"><svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4.5v15l13-7.5z"/></svg><i>Пуск</i></button><button id="fwd" class="sk"><span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 11-8-8h4"/><path d="M13.5 1.5L16 4l-2.5 2.5"/></svg><i>10</i></span></button></div>
   <div class="seek"><span id="cur">0:00</span><input type="range" id="sk" min="0" max="1000" value="0"><span id="dur">0:00</span></div>
   <div class="dock2">
-   <div class="inp"><button id="ptt" title="Рация: держите и говорите">🎙</button><input id="txt" placeholder="Написать в чат…" enterkeyhint="send"><button id="send">➤</button></div>
+   <div class="inp"><button id="ptt" title="Рация: держите и говорите"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg></button><input id="txt" placeholder="Написать в чат…" enterkeyhint="send"><button id="send" title="Отправить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button></div>
   </div>
 </div>
  </div>
@@ -183,7 +231,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
 <audio id="raud" autoplay playsinline></audio>
 <div id="safeprobe" style="position:fixed;visibility:hidden;pointer-events:none;top:0;left:0;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)"></div>
 <div class="sheet" id="setup"><div class="sbox"><div class="grab"></div>
- <div class="hd"><span class="hico"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="8" r="3.6"/><circle cx="16.5" cy="8.6" r="3"/><path d="M1.5 19.5c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2v.5h-13z"/><path d="M15.2 20v-.5c0-2.1-.8-3.9-2.1-5.2.9-.5 2-.8 3.4-.8 3.1 0 5.5 2.2 5.5 5.3v1.2z"/></svg></span><div class="htx"><h2>Смотрим вдвоём</h2><span class="ver">версия 27</span></div><button id="diagb" class="round" title="Диагностика связи"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
+ <div class="hd"><span class="hico"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="8" r="3.6"/><circle cx="16.5" cy="8.6" r="3"/><path d="M1.5 19.5c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2v.5h-13z"/><path d="M15.2 20v-.5c0-2.1-.8-3.9-2.1-5.2.9-.5 2-.8 3.4-.8 3.1 0 5.5 2.2 5.5 5.3v1.2z"/></svg></span><div class="htx"><h2>Смотрим вдвоём</h2><span class="ver">версия 28</span></div><button id="diagb" class="round" title="Диагностика связи"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>
  <div class="inst" id="inst" hidden></div>
  <label class="card row" for="pick"><span class="tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9l1.2-4.5 16.5-1.5.3 4.5z"/><path d="M8 4.3l2 4.2M13.5 3.8l2 4.4" /><path d="M10 13v5l4.2-2.5z" fill="currentColor"/></svg></span><span class="ctx"><b>Выберите файл выпуска</b><small>Его заранее кладут в «Файлы» на iPhone. Видео никуда не загружается.</small></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></span></label>
  <label class="btn ib" id="pickl"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="2"/><path d="M3 9l1.2-4.5 16.5-1.5.3 4.5z"/><path d="M8 4.3l2 4.2M13.5 3.8l2 4.4" /><path d="M10 13v5l4.2-2.5z" fill="currentColor"/></svg></span>Выбрать видео<input type="file" id="pick" accept="video/*,.mp4" hidden></label>
@@ -204,7 +252,7 @@ video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
  <button id="join" class="sec">Войти по коду</button></div>
  <div class="st" id="st"></div>
 </div></div>
-<div class="sheet" id="diag" hidden><div class="sbox"><h2>🩺 Диагностика</h2><pre id="diagt" style="max-height:52vh;overflow:auto;font:11px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;background:#0d0d10;border-radius:12px;padding:10px;margin:0;-webkit-user-select:text;user-select:text"></pre><button id="diagc">📋 Скопировать</button><button id="diagx" class="sec">Закрыть</button></div></div>
+<div class="sheet" id="diag" hidden><div class="sbox"><div class="grab"></div><div class="hd"><span class="hico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg></span><div class="htx"><h2>Диагностика</h2><span class="ver">журнал связи</span></div></div><pre id="diagt" class="card logbox" style="max-height:50vh;overflow:auto;font:11px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;margin:0 0 6px;-webkit-user-select:text;user-select:text"></pre><div class="two"><button id="diagc" class="ib grn" style="text-align:center"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="8" y="8" width="12" height="13" rx="2.5"/><path d="M16 8V5.5A2.5 2.5 0 0013.5 3h-7A2.5 2.5 0 004 5.5v9A2.5 2.5 0 006.5 17H8"/></svg></span>Скопировать</button><button id="diagx" class="ib" style="text-align:center">Закрыть</button></div></div></div>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
 /* подсказка «как установить на экран Домой»: только в браузере (не в уже установленном приложении) */
@@ -233,9 +281,9 @@ const playing=()=>ytOn?(ytOK()&&yt.getPlayerState()===1):!v.paused;
 function unlock(){lvUnlock();if(unlocked||!v.src||shRecv)return;unlocked=true;const p=v.play();if(p)p.then(()=>v.pause()).catch(()=>{unlocked=false})}
 $('pick').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;v.src=URL.createObjectURL(f);v.load();$('fname').textContent='✓ '+f.name;castUI();if(autoCast){autoCast=false;$('dlpick').hidden=true;try{localStorage.removeItem('dl_pending')}catch(_){}v.addEventListener('loadeddata',()=>{if(dc&&dc.readyState==='open')shSendStart();else toast('Видео выбрано — покажете, когда напарник подключится')},{once:true})}try{localStorage.setItem('tox_fname',f.name)}catch(_){}unlock()});
 v.addEventListener('loadedmetadata',()=>{$('dur').textContent=fmt(v.duration);try{const p=JSON.parse(localStorage.getItem('tox_pos')||'null');if(p&&p.t>30){v.currentTime=p.t;toast('↪ с '+fmt(p.t))}}catch(_){}});
-v.addEventListener('pause',()=>{$('vw').classList.add('paused');$('pp').textContent='▶ Пуск'});
+v.addEventListener('pause',()=>{$('vw').classList.add('paused');ppUI(0)});
 v.addEventListener('loadedmetadata',()=>{if(v.videoWidth)document.documentElement.style.setProperty('--ar',v.videoWidth+'/'+v.videoHeight)});
-v.addEventListener('play',()=>{$('vw').classList.remove('paused');$('pp').textContent='⏸ Пауза'});
+v.addEventListener('play',()=>{$('vw').classList.remove('paused');ppUI(1)});
 setInterval(()=>{const d=D(),t=T();if(d&&isFinite(d)){$('cur').textContent=fmt(t);$('dur').textContent=fmt(d);if(!sk.drag)$('sk').value=Math.round(1000*t/d);if(!shRecv)try{localStorage.setItem('tox_pos',JSON.stringify({t}))}catch(_){}}},500);
 const sk=$('sk');sk.addEventListener('input',()=>{sk.drag=true;if(D())$('cur').textContent=fmt(sk.value/1000*D())});
 sk.addEventListener('change',()=>{sk.drag=false;const d=D();if(!d||!isFinite(d))return;const t=sk.value/1000*d;ytQuiet();setT(t);send({k:'seek',t})});
@@ -270,7 +318,7 @@ setInterval(()=>{if(!room)return;if(!sigOut)send({k:'hb'});if(ok&&Date.now()-las
 /* без VPN связь с посредником может «замерзать» через несколько килобайт. Мы слышим собственное «я тут» (раз в 5 с):
    если его нет 12 с или принято уже много — тихо открываем соединение заново; брокер хранит пропущенное (clean:false) */
 /* --- журнал диагностики: ⋯ → «Диагностика связи» → «Скопировать» --- */
-const VER='v27',DIAG=[];
+const VER='v28',DIAG=[];
 function dlog(t){const d=new Date();DIAG.push(d.toTimeString().slice(0,8)+' '+t);if(DIAG.length>300)DIAG.shift()}
 function diagText(){const t=Date.now(),sec=x=>x?Math.round((t-x)/1000)+'с':'—';
   let h='Вдвоём '+VER+' · '+new Date().toTimeString().slice(0,8)+' · '+(host?'создал':'вошёл')+'\n'+navigator.userAgent.replace(/^.*?\(/,'(').slice(0,70)+'\n';
@@ -483,10 +531,12 @@ $('camx').onclick=e=>{e.stopPropagation();camStop(true)};$('cams').onclick=e=>{e
    без серверов-посредников. Комната (MQTT) нужна только для первого «рукопожатия».
    Пока прямой связи нет — всё работает как раньше: через комнату, 🎙 — рация. --- */
 let link=null,dc=null,peerId='',micStream=null,micOn=true,linkTry=0,linkFails=0,linkDropT=null;
+const IC={mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21"/></svg>',micoff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M3.5 3.5l17 17"/></svg>',play:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4.5v15l13-7.5z"/></svg>',pause:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5.5" y="4.5" width="4.5" height="15" rx="1.5"/><rect x="14" y="4.5" width="4.5" height="15" rx="1.5"/></svg>',cast:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18a3 3 0 013 3M3 14a7 7 0 017 7M3 10a11 11 0 0111 11"/><path d="M7 4h12a2 2 0 012 2v12a2 2 0 01-2 2h-3"/></svg>',stop:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="3"/></svg>'};
+function ppUI(on){$('pp').innerHTML=on?IC.pause+'<i>Пауза</i>':IC.play+'<i>Пуск</i>'}
 const raud=$('raud');
 function callOn(){return !!(link&&link.connectionState==='connected'&&micStream)}
 function micUI(){const b=$('ptt');const on=callOn();b.classList.toggle('live',on&&micOn);b.classList.toggle('mut',on&&!micOn);
-  b.textContent=on&&!micOn?'🔇':'🎙';b.title=on?(micOn?'Микрофон включён — нажмите, чтобы выключить':'Микрофон выключен — нажмите, чтобы включить'):'Рация: держите и говорите'}
+  b.innerHTML=on&&!micOn?IC.micoff:IC.mic;b.title=on?(micOn?'Микрофон включён — нажмите, чтобы выключить':'Микрофон выключен — нажмите, чтобы включить'):'Рация: держите и говорите'}
 /* выключение микрофона: сам микрофон на iPhone не трогаем (иначе iPhone меняет режим звука и голос собеседника пропадает),
    а просто перестаём отправлять звук собеседнику */
 function applyMic(){const tr=micStream&&micStream.getAudioTracks()[0];if(tr)tr.enabled=true;if(link&&link._as)link._as.replaceTrack(micOn&&tr?tr:null).catch(()=>{})}
@@ -588,7 +638,7 @@ async function linkStart(initiator,offer,offerId){linkClose();const p=link=RTC()
    Картинка рисуется на холсте и уходит как видеопоток; звук шоу берётся из того же узла, что и для своих динамиков.
    У напарника поток показывается вместо его видео; пауза и перемотка с его стороны управляют моим видео. */
 let spc=null,shSend=false,shCanvas=null,shDraw=null,shPosT=null,shPrevSrc='';
-function castUI(){const b=$('cast');b.hidden=ytOn||!(shRecv?shPrevSrc:v.src);b.textContent=shSend?'⏹ Остановить показ':shRecv?'📡 Показать вместо этого моё видео':'📡 Показать это видео напарнику'}
+function castUI(){const b=$('cast');b.hidden=ytOn||!(shRecv?shPrevSrc:v.src);b.innerHTML='<span class="ic">'+(shSend?IC.stop:IC.cast)+'</span>'+(shSend?'Остановить показ':shRecv?'Показать вместо этого моё видео':'Показать это видео напарнику')}
 v.addEventListener('loadedmetadata',castUI);
 /* показывать может любой из двоих: если сейчас показывает напарник — забираем показ себе */
 $('cast').onclick=()=>{if(shSend)return shSendStop(true);if(shRecv){send({k:'shtake'});shRecvStop(false);v.addEventListener('loadeddata',()=>shSendStart(),{once:true});return}shSendStart()};
@@ -634,7 +684,7 @@ async function ytOpen(id,mine){if(shSend)shSendStop(true);if(shRecv)shRecvStop(f
 function ytClose(tell){if(!ytOn)return;ytOn=false;try{yt&&yt.destroy()}catch(_){}yt=null;$('ytbox').innerHTML='<div id="ytp"></div>';$('ytbox').hidden=true;$('ytx').hidden=true;castUI();
   if(tell)send({k:'ytoff'});else sys('напарник закрыл YouTube')}
 /* то, что нажали прямо в окне YouTube, тоже отправляем напарнику */
-function ytState(e){if(Date.now()<ytQ)return;const t=T();if(e.data===1){send({k:'play',t});$('pp').textContent='⏸ Пауза';$('vw').classList.remove('paused')}else if(e.data===2){send({k:'pause',t});$('pp').textContent='▶ Пуск';$('vw').classList.add('paused')}}
+function ytState(e){if(Date.now()<ytQ)return;const t=T();if(e.data===1){send({k:'play',t});ppUI(1);$('vw').classList.remove('paused')}else if(e.data===2){send({k:'pause',t});ppUI(0);$('vw').classList.add('paused')}}
 /* перемотку внутри YouTube замечаем по скачку времени */
 setInterval(()=>{if(!ytOn||!ytOK())return;const t=T(),now=Date.now(),exp=ytLast.t+(playing()?(now-ytLast.at)/1000:0);
   if(ytLast.at&&Math.abs(t-exp)>2.5&&now>ytQ)send({k:'seek',t});ytLast={t,at:now}},1000);
