@@ -62,16 +62,41 @@ const srv=http.createServer((req,res)=>{
       codes.forEach(c=>{(db[c]=db[c]||{})[m.did]={sub,t:Date.now()}});save();return reply(res,200,{ok:true,n:codes.length})}
     if(path==='/ring'){                     // {code, did, name}
       if(!okCode(m.code)||!okDid(m.did))return reply(res,400,{});
-      const now=Date.now();if(now-(lastRing[m.code]||0)<8000)return reply(res,429,{});lastRing[m.code]=now;
-      const name=String(m.name||'').slice(0,20).trim()||'Напарник';
-      const text=JSON.stringify({title:'Смотрим вдвоём',body:name+' зовёт смотреть вместе',code:m.code});
-      const targets=Object.entries(db[m.code]||{}).filter(([d])=>d!==m.did);let sent=0;
-      await Promise.all(targets.map(([d,x])=>sendPush(x.sub,text).then(()=>sent++).catch(e=>{console.log('push error',e.statusCode||e.message,e.body||'');
-        if(e.statusCode===404||e.statusCode===410){delete db[m.code][d];save()}})));
-      console.log('ring',m.code,'→',sent+'/'+targets.length);return reply(res,200,{sent,targets:targets.length})}
+      const r=await doRing(m,'https');return reply(res,r.busy?429:200,r)}
     reply(res,404,{})})});
+
+/* позвать напарника: и по https, и через запасной канал (MQTT) — что дойдёт первым */
+async function doRing(m,via){const now=Date.now();if(now-(lastRing[m.code]||0)<8000)return {busy:true};lastRing[m.code]=now;
+  const name=String(m.name||'').slice(0,20).trim()||'Напарник';
+  const text=JSON.stringify({title:'Смотрим вдвоём',body:name+' зовёт смотреть вместе',code:m.code});
+  const targets=Object.entries(db[m.code]||{}).filter(([d])=>d!==m.did);let sent=0;
+  await Promise.all(targets.map(([d,x])=>sendPush(x.sub,text).then(()=>sent++).catch(e=>{console.log('push error',e.statusCode||e.message,e.body||'');
+    if(e.statusCode===404||e.statusCode===410){delete db[m.code][d];save()}})));
+  console.log('ring',m.code,'('+via+') →',sent+'/'+targets.length);return {sent,targets:targets.length}}
+/* запасной канал: слушаем приглашения на общедоступных MQTT-посредниках — до них телефон часто достаёт, даже когда до нашего сервера нет */
+const tls=require('tls'),net=require('net');
+const MQ=(process.env.MQ_HOSTS||'broker.hivemq.com:8883').split(',');
+function vlen(n){const b=[];do{let x=n%128;n=Math.floor(n/128);if(n>0)x|=128;b.push(x)}while(n>0);return Buffer.from(b)}
+function pkt(type,body){return Buffer.concat([Buffer.from([type]),vlen(body.length),body])}
+function str(s){const b=Buffer.from(s);const l=Buffer.alloc(2);l.writeUInt16BE(b.length);return Buffer.concat([l,b])}
+function mqttListen(hp){const [host,port]=hp.split(':');let sock,buf=Buffer.alloc(0),ping=null,alive=false;
+  const id='vdvoem-srv-'+crypto.randomBytes(4).toString('hex');
+  const go=()=>{buf=Buffer.alloc(0);const opts={host,port:+port||8883,servername:host};
+    sock=(process.env.MQ_PLAIN?net.connect(opts.port,host):tls.connect(opts));
+    sock.on(process.env.MQ_PLAIN?'connect':'secureConnect',()=>{sock.write(pkt(0x10,Buffer.concat([str('MQTT'),Buffer.from([4,2,0,60]),str(id)])))});
+    sock.on('data',d=>{buf=Buffer.concat([buf,d]);for(;;){if(buf.length<2)return;let mul=1,len=0,i=1,b;
+      do{if(i>=buf.length)return;b=buf[i++];len+=(b&127)*mul;mul*=128}while(b&128);if(buf.length<i+len)return;
+      const t=buf[0]>>4,q=(buf[0]>>1)&3,body=buf.subarray(i,i+len);buf=buf.subarray(i+len);
+      if(t===2){alive=true;console.log('mqtt',host,'подключён');sock.write(pkt(0x82,Buffer.concat([Buffer.from([0,1]),str('toxanton/pushring/+'),Buffer.from([0])])));
+        clearInterval(ping);ping=setInterval(()=>{try{sock.write(Buffer.from([0xC0,0]))}catch(_){}},30000)}
+      else if(t===3){const tl=body.readUInt16BE(0),off=2+tl+(q?2:0);let m;try{m=JSON.parse(body.subarray(off).toString())}catch(_){continue}
+        if(m&&okCode(m.code)&&okDid(m.did)&&Math.abs(Date.now()-(+m.ts||0))<120000)doRing(m,'mqtt '+host).catch(()=>{})}}});
+    const again=()=>{clearInterval(ping);if(alive)console.log('mqtt',host,'отключён');alive=false;setTimeout(go,5000)};
+    sock.on('error',()=>{});sock.on('close',again)};
+  go()}
+if(require.main===module)MQ.filter(Boolean).forEach(mqttListen);
 if(require.main===module)srv.listen(PORT,'127.0.0.1',()=>console.log('vdvoem push on',PORT));
-module.exports={encrypt,vapid,K,srv};
+module.exports={encrypt,vapid,K,srv,mqttListen,db};
 EOF_SERVER
 cat > /etc/systemd/system/vdvoem-push.service <<EOF_UNIT
 [Unit]
