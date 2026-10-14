@@ -36,7 +36,7 @@ function encrypt(sub,text){const uaPub=ub64(sub.keys.p256dh),auth=ub64(sub.keys.
   return Buffer.concat([hdr,asPub,ct])}
 function sendPush(sub,text){return new Promise((res,rej)=>{const body=encrypt(sub,text),u=new URL(sub.endpoint);
   const mod=u.protocol==='http:'?http:https;
-  const r=mod.request(u,{method:'POST',headers:{'Content-Encoding':'aes128gcm','Content-Type':'application/octet-stream','Content-Length':body.length,TTL:'900',Urgency:'high',Authorization:vapid(sub.endpoint)},timeout:10000},
+  const r=mod.request(u,{method:'POST',headers:{'Content-Encoding':'aes128gcm','Content-Type':'application/octet-stream','Content-Length':body.length,TTL:'120',Urgency:'high',Authorization:vapid(sub.endpoint)},timeout:10000},
     x=>{let d='';x.on('data',c=>d+=c);x.on('end',()=>x.statusCode<300?res(x.statusCode):rej({statusCode:x.statusCode,body:d.slice(0,200)}))});
   r.on('error',e=>rej({message:e.message}));r.on('timeout',()=>r.destroy(new Error('timeout')));r.end(body)})}
 /* подписки: { код комнаты: { устройство: {sub,t} } } */
@@ -62,6 +62,7 @@ const srv=http.createServer((req,res)=>{
       codes.forEach(c=>{(db[c]=db[c]||{})[m.did]={sub,t:Date.now()}});save();return reply(res,200,{ok:true,n:codes.length})}
     if(path==='/ring'){                     // {code, did, name}
       if(!okCode(m.code)||!okDid(m.did))return reply(res,400,{});
+      if(m.ts&&Math.abs(Date.now()-(+m.ts))>120000)return reply(res,200,{sent:0,targets:0,old:true});   // запрос шёл слишком долго — уже не актуален
       const r=await doRing(m,'https');return reply(res,r.busy?429:200,r)}
     reply(res,404,{})})});
 
